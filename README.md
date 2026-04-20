@@ -2,13 +2,17 @@
  
 [GitHub](https://github.com/RealHinome/Ringil)
 
-> *"Yet with his last and desperate stroke Fingolfin hewed the foot with Ringil..."*
+> *"Yet with his last and desperate stroke Fingolfin hewed the foot with Ringil
+> ..."*
 
-**Ringil**  is a system of autonomous swarms for objects--drones, submarines, etc.
-Decisions are events recorded and then determined by Galadril, but each entity can independently decide to take action to avoid an obstacle.
+**Ringil**  is a system of autonomous swarms for objects--drones, submarines,
+etc. Decisions are events recorded and then determined by Galadril, but each
+entity can independently decide to take action to avoid an obstacle.
 
 > [!CAUTION]
 > This project is still in its early stages.
+
+## Targeted architecture
 
 ```mermaid
 flowchart TB
@@ -50,3 +54,28 @@ flowchart TB
     G_Logic -. Strategic_Objectives .-> Local_Avoidance
     G_ESKG <--> G_Logic
 ```
+
+### Internal engine
+
+At its core, Ringil is driven by continuous interaction between physics, local
+intent, and collective behavior.
+
+$$\dot{p}_i = v_i \quad,\quad \dot{v}_i = u_i + f_i^{env}$$
+
+Each node is first and foremost a physical system. Position evolves from
+velocity, and velocity evolves from applied control and environmental
+disturbances (wind, currents, drag, etc.).  
+
+$$u_i = -\nabla \left( \frac{1}{2}k_a \|p_i - p_{goal}\|^2 + \sum_{j}
+    \frac{k_r}{\|p_i - p_j\|^2} \right)$$
+
+This defines how an entity reacts with compromise between:
+* moving toward an objective (attraction),
+* and avoiding others or obstacles (repulsion).
+
+$$\dot{p}_i = \sum_{j \in \mathcal{N}_i} a_{ij}(p_j - p_i)$$
+
+There is no explicit formation controller here.
+Instead, each node continuously adjusts itself relative to its neighbors.
+
+$$x_{t} = x_{t|t-1} + K_t \left(z_t - H x_{t|t-1}\right)$$
