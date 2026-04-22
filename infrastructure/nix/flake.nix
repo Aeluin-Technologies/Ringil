@@ -18,27 +18,48 @@
   } @ inputs: let
     system = "aarch64-linux";
 
+    galadrilConfig = {
+      endpoint = let
+        env = builtins.getEnv "GALADRIL_ENDPOINT";
+      in
+        if env != ""
+        then env
+        else "localhost:51820";
+      publicKey = let
+        env = builtins.getEnv "GALADRIL_PUBKEY";
+      in
+        if env != ""
+        then env
+        else "";
+    };
+
     mkDrone = {
       hostname,
       profile,
     }:
       nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = {inherit inputs;};
+        specialArgs = {inherit inputs galadrilConfig;};
         modules = [
           disko.nixosModules.disko
           jetpack-nixos.nixosModules.default
 
-          ./modules/core/env.nix
-          ./modules/core/bootloader.nix
-          ./modules/core/filesystems.nix
           ./hardware/jetson.nix
           ./hardware/px4-interfaces.nix
           ./hardware/cuda-tensorrt.nix
+          ./modules/core/env.nix
+          ./modules/core/bootloader.nix
+          ./modules/core/filesystems.nix
+          ./modules/network/galadril-link.nix
           ./modules/security/anssi-kernel.nix
+          ./modules/security/lockdown.nix
+          ./modules/security/tpm-wg.nix
+          ./modules/security/tpm2.nix
           ./modules/security/users.nix
           ./modules/network/galadril-link.nix
           ./modules/observability/metrics.nix
+          ./modules/observability/logs.nix
+          ./modules/ringil/package.nix
           ./modules/ringil/service.nix
 
           ./profiles/${profile}.nix
@@ -47,12 +68,12 @@
       };
   in {
     nixosConfigurations = {
-      "dev-drone-01" = mkDrone {
-        hostname = "dev-drone-01";
+      "dev-drone" = mkDrone {
+        hostname = "dev-drone";
         profile = "dev";
       };
-      "prod-swarm-alpha" = mkDrone {
-        hostname = "prod-swarm-alpha";
+      "prod-swarm" = mkDrone {
+        hostname = "prod-swarm";
         profile = "prod";
       };
     };
