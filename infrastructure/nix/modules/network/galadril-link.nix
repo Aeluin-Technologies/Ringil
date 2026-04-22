@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  galadrilConfig,
   ...
 }: {
   networking.wireguard.interfaces = {

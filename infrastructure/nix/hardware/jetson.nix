@@ -9,14 +9,8 @@
     carrierBoard = "devkit";
     super = false;
 
-    firmware.update.enable = false;
+    firmware.autoUpdate = false;
   };
 
-  hardware.graphics = {
-    enable = true;
-    driSupport = true;
-    extraPackages = with config.boot.kernelPackages; [
-      nvidia-tegra
-    ];
-  };
+  hardware.graphics.enable = true;
 }

@@ -59,10 +59,9 @@
           ./modules/network/galadril-link.nix
           ./modules/observability/metrics.nix
           ./modules/observability/logs.nix
-          ./modules/ringil/package.nix
           ./modules/ringil/service.nix
 
-          ./profiles/${profile}.nix
+          ./machines/${profile}/default.nix
           {networking.hostName = hostname;}
         ];
       };
@@ -71,12 +70,10 @@
       "dev-drone" = mkDrone {
         hostname = "dev-drone";
         profile = "dev";
-        machineFolder = "dev-drone";
       };
       "prod-swarm" = mkDrone {
         hostname = "prod-swarm";
         profile = "prod";
-        machineFolder = "prod-swarm";
       };
     };
 
