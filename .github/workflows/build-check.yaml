@@ -1,0 +1,34 @@
+name: nix/build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  evaluate-nixos:
+    name: Evaluate NixOS configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+            github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check flakes
+        run: |
+          cd infrastructure/nix
+          nix flake check --impure --all-systems
+
+      - name: Evaluate dev configuration
+        run: |
+          cd infrastructure/nix
+          nix-instantiate --eval -E '(builtins.getFlake (toString ./.)).nixosConfigurations.dev-drone.config.system.build.toplevel' --impure
+
+      - name: Evaluate prod-swarm configuration
+        run: |
+          cd infrastructure/nix
+          nix-instantiate --eval -E '(builtins.getFlake (toString ./.)).nixosConfigurations.prod-swarm.config.system.build.toplevel' --impure
