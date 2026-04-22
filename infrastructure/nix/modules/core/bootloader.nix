@@ -10,6 +10,9 @@ in {
 
   boot.loader.timeout = lib.mkIf (cfg.mode == "prod") 0;
 
-  # TODO: Replace with Lanzaboote (SecureBoot) once the keys have been generated.
-  # boot.lanzaboote.enable = lib.mkIf (cfg.mode == "prod") true;
+  # nix-shell -p sbctl then sudo sbctl create-keys
+  boot.lanzaboote = {
+    enable = lib.mkIf (cfg.mode == "prod") true;
+    pkiBundle = "/etc/secureboot";
+  };
 }
