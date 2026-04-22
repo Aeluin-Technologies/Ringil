@@ -71,10 +71,12 @@
       "dev-drone" = mkDrone {
         hostname = "dev-drone";
         profile = "dev";
+        machineFolder = "dev-drone";
       };
       "prod-swarm" = mkDrone {
         hostname = "prod-swarm";
         profile = "prod";
+        machineFolder = "prod-swarm";
       };
     };
 
