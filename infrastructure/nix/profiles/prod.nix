@@ -1,5 +1,6 @@
 {lib, ...}: {
   ringil.env.mode = "prod";
+  users.allowNoPasswordLogin = true;
 
   services.openssh.enable = false;
   users.users.root.hashedPassword = "!";

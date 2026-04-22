@@ -3,10 +3,10 @@ pkgs.rustPlatform.buildRustPackage {
   pname = "ringil-daemon";
   version = "0.1.0";
 
-  src = ../../..;
+  src = ../../../..;
 
   cargoLock = {
-    lockFile = ../../../Cargo.lock;
+    lockFile = ../../../../Cargo.lock;
   };
 
   nativeBuildInputs = with pkgs; [pkg-config protobuf rustPlatform.bindgenHook];
