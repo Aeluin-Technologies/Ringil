@@ -1,4 +1,4 @@
-name: nix/format
+name: nix
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   format:
+    name: format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -19,7 +20,6 @@ jobs:
 
       - name: Check Nix formatting
         run: |
-          cd infrastructure/nix
           nix fmt -- --check .
 
       - name: Setup Rust
