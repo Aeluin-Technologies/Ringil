@@ -1,4 +1,8 @@
-{lib, config, ...}: let
+{
+  lib,
+  config,
+  ...
+}: let
   isProd = config.ringil.env.mode == "prod";
 in {
   boot.kernelParams = lib.mkIf isProd [

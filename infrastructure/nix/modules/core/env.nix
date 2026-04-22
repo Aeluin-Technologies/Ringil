@@ -1,7 +1,6 @@
-{ lib, ... }:
-{
+{lib, ...}: {
   options.ringil.env.mode = lib.mkOption {
-    type = lib.types.enum [ "dev" "prod" ];
+    type = lib.types.enum ["dev" "prod"];
     default = "prod";
     description = ''
       Defines how drone operates.
