@@ -44,24 +44,24 @@
           disko.nixosModules.disko
           jetpack-nixos.nixosModules.default
 
-          ./hardware/jetson.nix
-          ./hardware/px4-interfaces.nix
-          ./hardware/cuda-tensorrt.nix
-          ./modules/core/env.nix
-          ./modules/core/bootloader.nix
-          ./modules/core/filesystems.nix
-          ./modules/network/galadril-link.nix
-          ./modules/security/anssi-kernel.nix
-          ./modules/security/lockdown.nix
-          ./modules/security/tpm-wg.nix
-          ./modules/security/tpm2.nix
-          ./modules/security/users.nix
-          ./modules/network/galadril-link.nix
-          ./modules/observability/metrics.nix
-          ./modules/observability/logs.nix
-          ./modules/ringil/service.nix
+          ./infrastructure/nix/hardware/jetson.nix
+          ./infrastructure/nix/hardware/px4-interfaces.nix
+          ./infrastructure/nix/hardware/cuda-tensorrt.nix
+          ./infrastructure/nix/modules/core/env.nix
+          ./infrastructure/nix/modules/core/bootloader.nix
+          ./infrastructure/nix/modules/core/filesystems.nix
+          ./infrastructure/nix/modules/network/galadril-link.nix
+          ./infrastructure/nix/modules/security/anssi-kernel.nix
+          ./infrastructure/nix/modules/security/lockdown.nix
+          ./infrastructure/nix/modules/security/tpm-wg.nix
+          ./infrastructure/nix/modules/security/tpm2.nix
+          ./infrastructure/nix/modules/security/users.nix
+          ./infrastructure/nix/modules/network/galadril-link.nix
+          ./infrastructure/nix/modules/observability/metrics.nix
+          ./infrastructure/nix/modules/observability/logs.nix
+          ./infrastructure/nix/modules/ringil/service.nix
 
-          ./machines/${profile}/default.nix
+          ./infrastructure/nix/machines/${profile}/default.nix
           {networking.hostName = hostname;}
         ];
       };
