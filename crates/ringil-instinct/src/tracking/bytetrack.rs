@@ -91,8 +91,8 @@ impl KalmanFilter {
         }
         let mean = self.motion_mat * mean;
         let covariance =
-            self.motion_mat * covariance * self.motion_mat.transpose() +
-                motion_cov;
+            self.motion_mat * covariance * self.motion_mat.transpose()
+                + motion_cov;
         (mean, covariance)
     }
 
@@ -127,8 +127,8 @@ impl KalmanFilter {
         let innovation = measurement - projected_mean;
 
         let new_mean = mean + kalman_gain * innovation;
-        let new_covariance = covariance -
-            kalman_gain * innovation_cov * kalman_gain.transpose();
+        let new_covariance = covariance
+            - kalman_gain * innovation_cov * kalman_gain.transpose();
         (new_mean, new_covariance)
     }
 }
@@ -176,6 +176,7 @@ pub struct STrack {
 }
 
 impl STrack {
+    /// Create a new [`STrack`].
     pub fn new(tlwh: [f32; 4], score: f32, class_id: i64) -> Self {
         Self {
             tlwh,
@@ -440,8 +441,8 @@ impl ByteTrack {
             if cost > threshold {
                 continue;
             }
-            if unmatched_tracks.contains(&trk_idx) &&
-                unmatched_dets.contains(&det_idx)
+            if unmatched_tracks.contains(&trk_idx)
+                && unmatched_dets.contains(&det_idx)
             {
                 matches.push((trk_idx, det_idx));
                 unmatched_tracks.remove(&trk_idx);

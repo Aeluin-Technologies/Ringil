@@ -78,15 +78,15 @@ impl BuffaloExtractor {
         let best_face = faces
             .into_iter()
             .min_by(|a, b| {
-                let dist_a = ((((a.bbox.0 + a.bbox.2) / 2.0) * scale_x) -
-                    track_cx)
-                    .powi(2) +
-                    ((((a.bbox.1 + a.bbox.3) / 2.0) * scale_y) - track_cy)
+                let dist_a = ((((a.bbox.0 + a.bbox.2) / 2.0) * scale_x)
+                    - track_cx)
+                    .powi(2)
+                    + ((((a.bbox.1 + a.bbox.3) / 2.0) * scale_y) - track_cy)
                         .powi(2);
-                let dist_b = ((((b.bbox.0 + b.bbox.2) / 2.0) * scale_x) -
-                    track_cx)
-                    .powi(2) +
-                    ((((b.bbox.1 + b.bbox.3) / 2.0) * scale_y) - track_cy)
+                let dist_b = ((((b.bbox.0 + b.bbox.2) / 2.0) * scale_x)
+                    - track_cx)
+                    .powi(2)
+                    + ((((b.bbox.1 + b.bbox.3) / 2.0) * scale_y) - track_cy)
                         .powi(2);
                 dist_a.partial_cmp(&dist_b).unwrap()
             })
