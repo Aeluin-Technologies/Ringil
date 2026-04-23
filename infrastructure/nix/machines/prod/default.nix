@@ -1,4 +1,6 @@
 {...}: {
+  system.stateVersion = "26.05";
+
   imports = [
     ../../profiles/prod.nix
     ../../modules/core/filesystems.nix
