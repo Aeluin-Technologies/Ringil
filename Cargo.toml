@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
-members = ["crates/ringil-daemon"]
+members = [
+    "crates/ringil-instinct",
+]
 
 [workspace.package]
 version = "0.1.0"
