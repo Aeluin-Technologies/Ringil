@@ -55,31 +55,22 @@
             ./infrastructure/nix/modules/observability/metrics.nix
             ./infrastructure/nix/modules/observability/logs.nix
             ./infrastructure/nix/modules/ringil/service.nix
+
+            ./infrastructure/nix/machines/${profile}/default.nix
           ]
           ++ (
             if isSim
             then [
-              {
-                networking.hostName = hostname;
-                hardware.opengl.enable = true;
-                security.anssi-kernel.enable = false;
-                environment.systemPackages = with nixpkgs.legacyPackages.${system}; [
-                  gazebo
-                  mavlink
-                  python3Packages.mavros
-                ];
-              }
+              {networking.hostName = hostname;}
             ]
             else [
               jetpack-nixos.nixosModules.default
               ./infrastructure/nix/hardware/jetson.nix
               ./infrastructure/nix/hardware/px4-interfaces.nix
               ./infrastructure/nix/hardware/cuda-tensorrt.nix
-              ./infrastructure/nix/modules/security/anssi-kernel.nix
               ./infrastructure/nix/modules/security/lockdown.nix
               ./infrastructure/nix/modules/security/tpm-wg.nix
               ./infrastructure/nix/modules/security/tpm2.nix
-              ./infrastructure/nix/machines/${profile}/default.nix
               {networking.hostName = hostname;}
             ]
           );
@@ -94,7 +85,7 @@
 
       "sim-drone" = mkDrone {
         hostname = "sim-drone";
-        profile = "dev";
+        profile = "sim";
         system = "aarch64-linux";
         isSim = true;
       };
@@ -116,8 +107,6 @@
           rustc
           cargo
           rust-analyzer
-          gazebo
-          mavlink
           pkg-config
           openssl
           alejandra
