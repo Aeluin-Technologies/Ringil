@@ -3,6 +3,7 @@
 
   imports = [
     ../../profiles/prod.nix
+    ../../modules/security/anssi-kernel.nix
     ../../modules/core/filesystems.nix
   ];
 
