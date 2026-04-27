@@ -1,0 +1,13 @@
+services:
+  px4:
+    image: px4io/px4-sitl-gazebo:latest
+    container_name: px4
+    environment:
+      - PX4_SIM_MODEL=gz_x500
+      - PX4_GZ_WORLD=default
+      - HEADLESS=1
+    ports:
+      - "14550:14550/udp"   # QGroundControl
+      - "14540:14540/udp"   # MAVSDK
+      - "5600:5600/udp"     # GStreamer
+      - "8888:8888/udp"     # ROS 2 / uXRCE-DDS
