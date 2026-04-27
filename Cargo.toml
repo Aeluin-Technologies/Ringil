@@ -1,7 +1,9 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/ringil-daemon",
     "crates/ringil-instinct",
+    "crates/ringil-mavlink",
 ]
 
 [workspace.package]
