@@ -6,3 +6,10 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+anyhow = "1"
+tokio = { version = "1", features = ["full", "sync"] }
+tracing = "0.1"
+ringil-instinct = { path = "../ringil-instinct" }
+ringil-mavlink = { path = "../ringil-mavlink" }
+config = { version = "0.15", features = ["toml", "yaml"] }
+serde = { version = "1", features = ["derive"] }

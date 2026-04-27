@@ -1,0 +1,37 @@
+[target]
+type      = "Person" # "Person", "Object", "Location"
+embedding = [0.12, -0.05, 0.88, 0.23]
+threshold = 0.75
+
+[target.coordinates] # if type == "Location"
+lat  = 48.8566
+lon  = 2.3522
+alt  = 3.0
+
+[avoidance]
+person_safe_distance = 5    # (meters) Minimum distance from a person
+safe_distance        = 1.5  # (meters) Minimum distance from an obstacle
+max_yaw_rate         = 1.2  # (rpm) Maximum rotational speed
+repulse_gain         = 2.0  # Repulsion field gain
+
+[controller]
+p_gain_advance = 2.0    # Forward/reverse gain (tracking)
+p_gain_yaw     = 0.002  # Target centering gain
+
+[vision]
+video_src   = "udpsrc port=5600 caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! appsink"
+resolution  = [640, 480]
+frame_rate  = 30
+
+[communication]
+mavlink_url    = "udp://127.0.0.1:14540"
+heartbeat_rate = 1.0
+
+[simulation]
+# Important: Gazebo does not always run in real time (Lockstep).
+use_sim_time   = true   # Synchronization with the simulator's clock.
+timeout_connect = 30
+
+[offboard]
+failsafe_on_loss = true
+command_freq     = 20.0 # Hz (PX4 requires > 2 Hz to remain in offboard mode).
