@@ -27,6 +27,12 @@ impl FlightDirector {
         p_gain_yaw: f32,
         resolution: [u32; 2],
     ) -> Self {
+        tracing::info!(
+            ?person_safe_distance,
+            ?safe_distance,
+            ?repulse_gain,
+            "flight direction control connected to mavlink"
+        );
         Self {
             mavlink,
             person_safe_distance,

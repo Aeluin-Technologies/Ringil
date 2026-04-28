@@ -8,6 +8,7 @@ repository.workspace = true
 [dependencies]
 anyhow = "1"
 tokio = { version = "1", features = ["full", "sync"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing = "0.1"
 ringil-instinct = { path = "../ringil-instinct" }
 ringil-mavlink = { path = "../ringil-mavlink" }

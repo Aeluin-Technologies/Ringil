@@ -19,6 +19,12 @@ pub struct KalmanFilter {
     std_weight_velocity: f32,
 }
 
+impl Default for KalmanFilter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl KalmanFilter {
     /// Initialize matrices for 8D state and 4D measurement.
     pub fn new() -> Self {

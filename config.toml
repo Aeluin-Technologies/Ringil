@@ -24,7 +24,7 @@ resolution  = [640, 480]
 frame_rate  = 30
 
 [communication]
-mavlink_url    = "udp://127.0.0.1:14540"
+mavlink_url    = "udpout:127.0.0.1:14540"
 heartbeat_rate = 1.0
 
 [simulation]

@@ -15,6 +15,7 @@ impl MavlinkController {
     /// Establishes a connection to a vehicle.
     pub fn connect(address: &str) -> Result<Self> {
         let vehicle = mavlink::connect::<MavMessage>(address)?;
+        tracing::info!(?address, "mavlink output connected");
         Ok(Self {
             vehicle: Arc::new(Mutex::new(vehicle)),
         })
