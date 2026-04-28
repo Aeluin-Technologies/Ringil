@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }: let
   isProd = config.ringil.env.mode == "prod";
@@ -11,7 +12,10 @@ in {
     isSystemUser = true;
     group = "ringil";
     extraGroups = ["dialout" "i2c" "spi" "video"];
-    shell = if isProd then "${pkgs.shadow}/bin/nologin" else pkgs.bash;
+    shell =
+      if isProd
+      then "${pkgs.shadow}/bin/nologin"
+      else pkgs.bash;
     hashedPassword = lib.mkIf isProd "!";
   };
   users.groups.ringil = {};

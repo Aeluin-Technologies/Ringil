@@ -7,6 +7,8 @@
     jetpack-nixos.inputs.nixpkgs.follows = "nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
+    lanzaboote.url = "github:nix-community/lanzaboote/v0.4.2";
+    lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -14,6 +16,7 @@
     nixpkgs,
     jetpack-nixos,
     disko,
+    lanzaboote,
     ...
   } @ inputs: let
     supportedSystems = ["aarch64-linux" "x86_64-linux"];
@@ -46,6 +49,7 @@
         modules =
           [
             disko.nixosModules.disko
+            lanzaboote.nixosModules.lanzaboote
 
             ./infrastructure/nix/modules/core/env.nix
             ./infrastructure/nix/modules/core/bootloader.nix

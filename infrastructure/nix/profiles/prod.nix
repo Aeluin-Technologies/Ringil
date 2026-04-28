@@ -1,9 +1,14 @@
-{lib, ...}: {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}: {
   ringil.env.mode = "prod";
-  users.allowNoPasswordLogin = false;
+  users.allowNoPasswordLogin = lib.mkForce true;
 
   services.openssh.enable = false;
-  users.users.root.hashedPassword = "!";
+  users.users.root.hashedPassword = lib.mkForce "!";
 
   services.journald.extraConfig = ''
     Storage=volatile
@@ -12,20 +17,23 @@
 
   boot.kernelParams = ["quiet" "loglevel=0" "console=tty0"];
   boot.blacklistedKernelModules = [
-    "bluetooth" "btusb"
+    "bluetooth"
+    "btusb"
     "firewire-core"
-    "thunderbolt" "v4l2loopback"
-  "dvb_core"
-  "saa7134"
-  "uas"
-  "ums_realtek" "usb_storage"
+    "thunderbolt"
+    "v4l2loopback"
+    "dvb_core"
+    "saa7134"
+    "uas"
+    "ums_realtek"
+    "usb_storage"
   ];
-  boot.initrd.availableKernelModules = [ 
-  "sdhci_tegra" 
-  "nvme"
-  "cdc_acm"
-  "uvcvideo"
-];
+  boot.initrd.availableKernelModules = [
+    "sdhci_tegra"
+    "nvme"
+    "cdc_acm"
+    "uvcvideo"
+  ];
   systemd.services."serial-getty@ttyS0".enable = false;
 
   services.udisks2.enable = false;
@@ -35,7 +43,6 @@
 
   services.usbguard = {
     enable = true;
-    defaultPolicy = "block";
-    presentDevicePolicy = "apply-policy";
+    presentControllerPolicy = "apply-policy";
   };
 }

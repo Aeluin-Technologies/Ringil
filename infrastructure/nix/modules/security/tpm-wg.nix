@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   systemd.tmpfiles.rules = [
     "d /run/wireguard 0700 root root -"
   ];
@@ -6,25 +6,25 @@
   systemd.services.unlock-wg-key = {
     description = "Unlock WireGuard key via TPM2";
 
-    after = [ "tpm2-abrmd.service" ];
-    requires = [ "tpm2-abrmd.service" ];
-    before = [ "wireguard-wg-galadril.service" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["tpm2-abrmd.service"];
+    requires = ["tpm2-abrmd.service"];
+    before = ["wireguard-wg-galadril.service"];
+    wantedBy = ["multi-user.target"];
 
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      
+
       ProtectSystem = "strict";
       ProtectHome = true;
       PrivateTmp = true;
       NoNewPrivileges = true;
-      
-      DeviceAllow = [ "/dev/tpm0" "/dev/tpmrm0" ];
+
+      DeviceAllow = ["/dev/tpm0" "/dev/tpmrm0"];
       DevicePolicy = "closed";
 
-      ReadOnlyPaths = [ "/etc/secure" ];
-      ReadWritePaths = [ "/run/wireguard" ];
+      ReadOnlyPaths = ["/etc/secure"];
+      ReadWritePaths = ["/run/wireguard"];
 
       User = "root";
     };

@@ -23,11 +23,11 @@
           persistentKeepalive = 25;
         }
       ];
-
-      systemd.services."wireguard-wg-galadril" = {
-        after = [ "unlock-wg-key.service" ];
-        requires = [ "unlock-wg-key.service" ];
-      };
     };
+  };
+
+  systemd.services."wireguard-wg-galadril" = {
+    after = ["unlock-wg-key.service"];
+    requires = ["unlock-wg-key.service"];
   };
 }
