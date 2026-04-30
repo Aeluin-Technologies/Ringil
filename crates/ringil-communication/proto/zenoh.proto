@@ -1,27 +1,178 @@
 syntax = "proto3";
 
-package ringil;
+package ringil.swarm.v1;
 
-message DetectionEvent {
-  uint64 timestamp = 1;
-  string detector_id = 2;
-  string type = 3;
-  double x = 4;
-  double y = 5;
-  double z = 6;
-  double confidence = 7;
+
+// The high-level operational state of a swarm unit.
+enum ActivityMode {
+  // Default state, behavior not set.
+  ACTIVITY_MODE_UNSPECIFIED = 0;
+  // Unit is stationary or loitering with no active task.
+  ACTIVITY_MODE_IDLE = 1;
+  // Active exploration or area coverage without a specific target.
+  ACTIVITY_MODE_SCOUTING = 2;
+  // Locked onto a specific target for observation.
+  ACTIVITY_MODE_TRACKING = 3;
+  // High-speed engagement or approach towards a target.
+  ACTIVITY_MODE_INTERCEPTING = 4;
+  // Dedicated state for environment scanning and SLAM data collection.
+  ACTIVITY_MODE_MAPPING = 5;
+  // Critical failure or manual emergency override.
+  ACTIVITY_MODE_EMERGENCY = 6;
+  // Returning to the deployment station or charging hive.
+  ACTIVITY_MODE_RECOVERY = 7;
 }
 
-message ConsensusAction {
-  uint64 timestamp = 1;
-  string sender_id = 2;
-  string action_type = 3;
-  repeated double params = 4;
+// Broad classification of entities detected by the edge AI models.
+enum EntityType {
+  // Unknown or unclassified entity.
+  ENTITY_TYPE_UNKNOWN = 0;
+  // Human target.
+  ENTITY_TYPE_PERSON = 1;
+  // Terrestrial or aerial vehicle.
+  ENTITY_TYPE_VEHICLE = 2;
+  // Non-human biological entity.
+  ENTITY_TYPE_ANIMAL = 3;
+  // Agricultural specific: detection of disease, pests or water stress.
+  ENTITY_TYPE_CROP_ANOMALY = 4;
+  // Physical hazard in the navigation path.
+  ENTITY_TYPE_OBSTACLE = 5;
+  // Another drone belonging to the Ringil collective.
+  ENTITY_TYPE_DRONE_FRIENDLY = 6;
 }
 
-message DroneMessage {
+// Priority level used by Zenoh for message queuing and shedding.
+enum PriorityLevel {
+  // Background telemetry.
+  PRIORITY_LEVEL_LOW = 0;
+  // Normal operational updates.
+  PRIORITY_LEVEL_MEDIUM = 1;
+  // Important event (e.g., target lost).
+  PRIORITY_LEVEL_HIGH = 2;
+  // Immediate action required (e.g., threat detected).
+  PRIORITY_LEVEL_CRITICAL = 3;
+}
+
+// Mathematical method used to compress AI embeddings for radio transmission.
+enum CompressionType {
+  // Raw float32 array. Not recommended for LoRa.
+  COMPRESSION_TYPE_NONE = 0;
+  // Principal Component Analysis for dimensionality reduction.
+  COMPRESSION_TYPE_PCA = 1;
+  // Vector quantization using a shared codebook.
+  COMPRESSION_TYPE_QUANTIZED = 2;
+  // 1-bit quantization for ultra-low bandwidth Re-Identification.
+  COMPRESSION_TYPE_BINARY = 3;
+}
+
+// Geodetic coordinates using fixed-point integers to save bandwidth.
+message GeoPoint {
+  // WGS84 Latitude multiplied by 1e7 (allows centimeter precision).
+  sint32 latitude = 1;
+  // WGS84 Longitude multiplied by 1e7.
+  sint32 longitude = 2;
+  // Altitude in decimeters (10cm units). Can be AMSL or AGL.
+  sint32 altitude = 3;
+}
+
+// Movement vectors in local or global coordinate systems.
+message Kinematics {
+  // Velocity along the X axis in centimeters per second.
+  sint32 velocity_x = 1;
+  // Velocity along the Y axis in centimeters per second.
+  sint32 velocity_y = 2;
+  // Velocity along the Z axis in centimeters per second.
+  sint32 velocity_z = 3;
+  // Clockwise orientation from True North in degrees (0-359).
+  uint32 heading = 4;
+}
+
+// Signature used for cross-drone Re-Identification (ReID).
+message FeatureEmbedding {
+  // Unique hash of the AI model to ensure vector compatibility.
+  uint32 model_hash = 1;
+  // Method used to compress the vector data.
+  CompressionType compression = 2;
+  // The compressed embedding vector.
+  bytes signature = 3; 
+}
+
+// Logical event representing a detection from the onboard sensors.
+message PerceptionEvent {
+  // Swarm-wide unique ID for a tracked entity.
+  uint32 target_id = 1;
+  // Classified nature of the entity.
+  EntityType type = 2;
+  // World position of the entity.
+  GeoPoint location = 3;
+  // Estimated movement of the entity.
+  Kinematics motion = 4;
+  // Probability score of the detection (0-100).
+  uint32 confidence = 5;
+  // Visual ReID data to allow other drones to recognize the same entity.
+  FeatureEmbedding reid = 6;
+  // Threat level assigned by the detecting drone.
+  PriorityLevel threat = 7;
+}
+
+// Distributed map synchronization for collaborative SLAM.
+message MappingUpdate {
+  // Incremental ID of the SLAM keyframe.
+  uint32 frame_id = 1;
+  // Spatial reference for the following visual hash.
+  GeoPoint anchor = 2;
+  // Compact descriptor hash for map alignment between nodes.
+  bytes visual_hash = 3;
+  // Indicates if the area contains a navigation hazard.
+  bool is_no_fly_zone = 4;
+}
+
+// Message used for decentralized task assignment (Swarm Intelligence).
+message ConsensusNode {
+  // ID of the target or the area being addressed.
+  uint32 task_id = 1;
+  // The role the drone proposes to take (e.g., TRACKING).
+  ActivityMode proposed_role = 2;
+  // Calculated fitness for the task (Battery, distance, sensor health).
+  uint32 bid_score = 3;
+  // Identifier for a sub-group of drones acting together.
+  uint32 cluster_id = 4;
+  // Flag indicating the drone has committed to the task.
+  bool is_locked = 5;
+}
+
+// Diagnostic and health telemetry.
+message UnitStatus {
+  // Voltage of the power source in millivolts.
+  uint32 battery_mv = 1;
+  // Percentage of compute resources used by AI/SLAM.
+  uint32 cpu_percent = 2;
+  // Received Signal Strength Indicator of the mesh network (dBm).
+  sint32 signal_rssi = 3;
+  // Current high-level behavior of the drone.
+  ActivityMode current_mode = 4;
+}
+
+// The top-level frame for all Ringil communications.
+message RingilFrame {
+  // Unique identifier of the originating swarm member.
+  uint32 source_node_id = 1;
+  // Microseconds since Unix Epoch.
+  uint64 timestamp_us = 2;
+  // Remaining hops allowed in the mesh network.
+  uint32 hop_limit = 3;
+
+  // The actual payload of the message. Only one can be set at a time.
   oneof payload {
-    DetectionEvent detection = 1;
-    ConsensusAction consensus = 2;
+    // Shared perception data.
+    PerceptionEvent perception = 4;
+    // SLAM and topographic updates.
+    MappingUpdate mapping = 5;
+    // Task negotiation data.
+    ConsensusNode consensus = 6;
+    // Health and state telemetry.
+    UnitStatus status = 7;
+    // Overriding navigation target.
+    GeoPoint nav_goal = 8;
   }
 }
