@@ -1,5 +1,6 @@
 //! Custom communication protocol between peers using Protobuf.
 
-mod buffer;
-mod embedding;
-mod pb;
+pub mod buffer;
+mod builder;
+pub mod embedding;
+pub(crate) mod pb;
