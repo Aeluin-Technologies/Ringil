@@ -124,14 +124,16 @@ impl SwarmNode {
                             // If receiver is dropped this fails and breaks the loop.
                             if tx_clone.send(frame).await.is_err() {
                                 tracing::info!(
-                                    ?topic_name, "subscribed to a topic"
+                                    ?topic_name,
+                                    "subscribed to a topic"
                                 );
                                 break;
                             }
                         },
                         Err(_) => {
                             tracing::warn!(
-                                ?topic_name, "dropped unauthorized packet"
+                                ?topic_name,
+                                "dropped unauthorized packet"
                             );
                         },
                     }
