@@ -20,12 +20,16 @@ jobs:
 
       - name: Check flakes
         run: |
-          nix flake check --impure
+          nix flake check --impure --accept-flake-config
 
       - name: Evaluate dev configuration
         run: |
-          nix-instantiate --eval -E '(builtins.getFlake (toString ./.)).nixosConfigurations.dev-drone.config.system.build.toplevel' --impure
+          nix-instantiate --eval -E '(builtins.getFlake (toString ./.)).nixosConfigurations.dev-drone.config.system.build.toplevel' \
+            --impure \
+            --accept-flake-config
 
       - name: Evaluate prod-swarm configuration
         run: |
-          nix-instantiate --eval -E '(builtins.getFlake (toString ./.)).nixosConfigurations.prod-swarm.config.system.build.toplevel' --impure
+          nix-instantiate --eval -E '(builtins.getFlake (toString ./.)).nixosConfigurations.prod-swarm.config.system.build.toplevel' \
+            --impure \
+            --accept-flake-config
