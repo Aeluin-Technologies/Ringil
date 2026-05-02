@@ -1,16 +1,30 @@
 {
-  description = "Autonomous swarm drone OS (Jetson / PX4)";
+  description = "Autonomous swarm drone OS";
+
+  nixConfig = {
+    extra-substituters = [
+      "https://ros.cachix.org"
+      "https://cache.nixos-cuda.org"
+      "https://nix-community.cachix.org"
+      "https://anduril.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo="
+      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "anduril.cachix.org-1:69Y9YpYAsH9zDsqLaoW6NfO9U66TirFvJ0S69v4IioI="
+    ];
+  };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    jetpack-nixos.url = "github:anduril/jetpack-nixos";
+    jetpack-nixos.url = "github:anduril/jetpack-nixos/master";
     jetpack-nixos.inputs.nixpkgs.follows = "nixpkgs";
+    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay";
+    nixpkgs.follows = "nix-ros-overlay/nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     lanzaboote.url = "github:nix-community/lanzaboote/v0.4.2";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
-    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay";
-    nix-ros-overlay.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -22,7 +36,7 @@
     nix-ros-overlay,
     ...
   } @ inputs: let
-    supportedSystems = ["aarch64-darwin" "aarch64-linux" "x86_64-linux"];
+    supportedSystems = ["aarch64-linux"];
     forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
     galadrilConfig = {
@@ -40,6 +54,23 @@
         else "";
     };
 
+    sharedNixConfig = {
+      nix.settings = {
+        experimental-features = ["nix-command" "flakes"];
+        substituters = [
+          "https://cache.nixos.org"
+          "https://ros.cachix.org"
+          "https://anduril.cachix.org"
+        ];
+        trusted-public-keys = [
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+          "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo="
+          "anduril.cachix.org-1:69Y9YpYAsH9zDsqLaoW6NfO9U66TirFvJ0S69v4IioI="
+        ];
+        trusted-users = ["root" "@wheel"];
+      };
+    };
+
     mkDrone = {
       hostname,
       profile,
@@ -55,6 +86,17 @@
             disko.nixosModules.disko
             lanzaboote.nixosModules.lanzaboote
 
+            {
+              nixpkgs.config.allowUnfree = true;
+              nixpkgs.config.allowUnsupportedSystem = true;
+              nixpkgs.overlays = [
+                inputs.nix-ros-overlay.overlays.default
+                inputs.jetpack-nixos.overlays.default
+              ];
+            }
+
+            sharedNixConfig
+
             ./infrastructure/nix/modules/core/env.nix
             ./infrastructure/nix/modules/core/bootloader.nix
             ./infrastructure/nix/modules/core/filesystems.nix
@@ -69,9 +111,7 @@
           ]
           ++ (
             if isSim
-            then [
-              {networking.hostName = hostname;}
-            ]
+            then [{networking.hostName = hostname;}]
             else [
               jetpack-nixos.nixosModules.default
               ./infrastructure/nix/hardware/jetson.nix
@@ -105,54 +145,46 @@
       };
     };
 
-    formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+    formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.alejandra;
+    formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.alejandra;
 
     devShells = forAllSystems (system: let
-      isLinux = nixpkgs.lib.hasSuffix "-linux" system;
-      pkgs = import nixpkgs {
+      jetpackPkgs = import jetpack-nixos.inputs.nixpkgs {
         inherit system;
-        overlays = [
-          (final: prev:
-            if isLinux
-            then nix-ros-overlay.overlays.default final prev
-            else {})
-          (final: prev: {
-            vcstool = prev.vcs2l;
-            pythonPackagesExtensions =
-              prev.pythonPackagesExtensions
-              ++ [
-                (pyFinal: pyPrev: {
-                  vcstool = pyFinal.vcs2l;
-                })
-              ];
-          })
-        ];
+        config.allowUnfree = true;
+        config.allowUnsupportedSystem = true;
+        overlays = [jetpack-nixos.overlays.default];
+      };
+
+      rosPkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        config.allowUnsupportedSystem = true;
+        overlays = [nix-ros-overlay.overlays.default];
       };
     in {
-      default = pkgs.mkShell {
+      default = rosPkgs.mkShell {
         name = "drone-dev";
-        buildInputs = with pkgs;
-          [
-            rustc
-            cargo
-            rust-analyzer
-            pkg-config
-            openssl
-            alejandra
-          ]
-          ++ lib.optionals isLinux [
-            rosPackages.jazzy.ros-core
-            rosPackages.jazzy.rmw-zenoh-cpp
-            rosPackages.jazzy.behaviortree-cpp
-          ];
+
+        packages = [
+          rosPkgs.colcon
+          (with rosPkgs.rosPackages.jazzy; [
+            ros-core
+            rmw-zenoh-cpp
+            behaviortree-cpp
+          ])
+        ];
+
+        buildInputs = with rosPkgs; [
+          pkg-config
+          openssl
+          rustc
+          cargo
+          alejandra
+        ];
 
         shellHook = ''
           echo "🚀 Drone Dev Environment (${system})"
-          echo "Target: ${
-            if system == "aarch64-linux"
-            then "Jetson/VM"
-            else "x86_64 PC"
-          }"
 
           export RMW_IMPLEMENTATION=rmw_zenoh_cpp
           export ROS_DOMAIN_ID=42

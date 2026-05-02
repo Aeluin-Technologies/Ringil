@@ -47,11 +47,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1776613567,
-        "narHash": "sha256-gC9Cp5ibBmGD5awCA9z7xy6MW6iJufhazTYJOiGlCUI=",
+        "lastModified": 1777713215,
+        "narHash": "sha256-8GzXDOXckDWwST8TY5DbwYFjdvQLlP7K9CLSVx6iTTo=",
         "owner": "nix-community",
         "repo": "disko",
-        "rev": "32f4236bfc141ae930b5ba2fb604f561fed5219d",
+        "rev": "63b4e7e6cf75307c1d26ac3762b886b5b0247267",
         "type": "github"
       },
       "original": {
@@ -145,15 +145,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1775836290,
-        "narHash": "sha256-wI2cZ25o9lSIrub5JRCi8qXsQCJ/3DWZPRvYeDWGLdk=",
+        "lastModified": 1777257091,
+        "narHash": "sha256-5Z09FVXevCjykgUwCztyhPBIpGef4+yeosaUUq5OO8A=",
         "owner": "anduril",
         "repo": "jetpack-nixos",
-        "rev": "517e76e781f776c4b3a1b552ac82696f0b166609",
+        "rev": "bcba70c9ac21e9c224de4cb2304029c48f869107",
         "type": "github"
       },
       "original": {
         "owner": "anduril",
+        "ref": "master",
         "repo": "jetpack-nixos",
         "type": "github"
       }
@@ -187,9 +188,7 @@
     "nix-ros-overlay": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
+        "nixpkgs": "nixpkgs"
       },
       "locked": {
         "lastModified": 1777713931,
@@ -207,11 +206,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1776548001,
-        "narHash": "sha256-ZSK0NL4a1BwVbbTBoSnWgbJy9HeZFXLYQizjb2DPF24=",
+        "lastModified": 1771369470,
+        "narHash": "sha256-0NBlEBKkN3lufyvFegY4TYv5mCNHbi5OmBDrzihbBMQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b12141ef619e0a9c1c84dc8c684040326f27cdcc",
+        "rev": "0182a361324364ae3f436a63005877674cf45efb",
         "type": "github"
       },
       "original": {
@@ -270,7 +269,10 @@
         "jetpack-nixos": "jetpack-nixos",
         "lanzaboote": "lanzaboote",
         "nix-ros-overlay": "nix-ros-overlay",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": [
+          "nix-ros-overlay",
+          "nixpkgs"
+        ]
       }
     },
     "rust-overlay": {
