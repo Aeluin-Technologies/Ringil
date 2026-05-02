@@ -9,6 +9,8 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
     lanzaboote.url = "github:nix-community/lanzaboote/v0.4.2";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
+    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay";
+    nix-ros-overlay.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -17,9 +19,10 @@
     jetpack-nixos,
     disko,
     lanzaboote,
+    nix-ros-overlay,
     ...
   } @ inputs: let
-    supportedSystems = ["aarch64-linux" "x86_64-linux"];
+    supportedSystems = ["aarch64-darwin" "aarch64-linux" "x86_64-linux"];
     forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
     galadrilConfig = {
@@ -48,12 +51,14 @@
         specialArgs = {inherit inputs galadrilConfig;};
         modules =
           [
+            nix-ros-overlay.nixosModules.default
             disko.nixosModules.disko
             lanzaboote.nixosModules.lanzaboote
 
             ./infrastructure/nix/modules/core/env.nix
             ./infrastructure/nix/modules/core/bootloader.nix
             ./infrastructure/nix/modules/core/filesystems.nix
+            ./infrastructure/nix/modules/ringil/ros2.nix
             ./infrastructure/nix/modules/network/galadril-link.nix
             ./infrastructure/nix/modules/security/users.nix
             ./infrastructure/nix/modules/observability/metrics.nix
@@ -72,6 +77,7 @@
               ./infrastructure/nix/hardware/jetson.nix
               ./infrastructure/nix/hardware/px4-interfaces.nix
               ./infrastructure/nix/hardware/cuda-tensorrt.nix
+              ./infrastructure/nix/modules/core/rt.nix
               ./infrastructure/nix/modules/security/lockdown.nix
               ./infrastructure/nix/modules/security/tpm-wg.nix
               ./infrastructure/nix/modules/security/tpm2.nix
@@ -86,14 +92,12 @@
         profile = "dev";
         system = "aarch64-linux";
       };
-
       "sim-drone" = mkDrone {
         hostname = "sim-drone";
         profile = "sim";
         system = "aarch64-linux";
         isSim = true;
       };
-
       "prod-swarm" = mkDrone {
         hostname = "prod-swarm";
         profile = "prod";
@@ -102,19 +106,45 @@
     };
 
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+
     devShells = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
+      isLinux = nixpkgs.lib.hasSuffix "-linux" system;
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [
+          (final: prev:
+            if isLinux
+            then nix-ros-overlay.overlays.default final prev
+            else {})
+          (final: prev: {
+            vcstool = prev.vcs2l;
+            pythonPackagesExtensions =
+              prev.pythonPackagesExtensions
+              ++ [
+                (pyFinal: pyPrev: {
+                  vcstool = pyFinal.vcs2l;
+                })
+              ];
+          })
+        ];
+      };
     in {
       default = pkgs.mkShell {
         name = "drone-dev";
-        buildInputs = with pkgs; [
-          rustc
-          cargo
-          rust-analyzer
-          pkg-config
-          openssl
-          alejandra
-        ];
+        buildInputs = with pkgs;
+          [
+            rustc
+            cargo
+            rust-analyzer
+            pkg-config
+            openssl
+            alejandra
+          ]
+          ++ lib.optionals isLinux [
+            rosPackages.jazzy.ros-core
+            rosPackages.jazzy.rmw-zenoh-cpp
+            rosPackages.jazzy.behaviortree-cpp
+          ];
 
         shellHook = ''
           echo "🚀 Drone Dev Environment (${system})"
@@ -123,6 +153,10 @@
             then "Jetson/VM"
             else "x86_64 PC"
           }"
+
+          export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+          export ROS_DOMAIN_ID=42
+          echo "ROS 2 is active with RMW: $RMW_IMPLEMENTATION"
         '';
       };
     });

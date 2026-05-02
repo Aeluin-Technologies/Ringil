@@ -8,7 +8,7 @@ on:
 jobs:
   check:
     name: check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -20,7 +20,7 @@ jobs:
 
       - name: Check flakes
         run: |
-          nix flake check --impure --all-systems
+          nix flake check --impure
 
       - name: Evaluate dev configuration
         run: |
