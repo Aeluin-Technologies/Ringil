@@ -20,7 +20,7 @@ jobs:
 
       - name: Check Nix formatting
         run: |
-          nix fmt -- --check .
+          nix fmt --accept-flake-config -- --check .
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
