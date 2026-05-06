@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+mimalloc = "0.1"
 anyhow = "1"
 tokio = { version = "1", features = ["full", "sync"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
