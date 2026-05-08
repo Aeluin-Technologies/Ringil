@@ -6,7 +6,8 @@
 }: let
   isProd = config.ringil.env.mode == "prod";
 in {
-  users.mutableUsers = false;
+  users.mutableUsers = !isProd;
+  users.allowNoPasswordLogin = isProd;
 
   users.users.ringil = {
     isSystemUser = true;
