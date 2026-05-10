@@ -5,6 +5,7 @@ members = [
     "crates/ringil-daemon",
     "crates/ringil-instinct",
     "crates/ringil-mavlink",
+    "crates/ringil-spirit",
 ]
 
 [workspace.package]

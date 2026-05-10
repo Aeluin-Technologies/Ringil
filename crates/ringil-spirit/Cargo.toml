@@ -1,0 +1,15 @@
+[package]
+name = "ringil-spirit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+tracing = "0.1"
+rclrs = { version = "0.7" }
+rosidl_runtime_rs = "0.6"
+image = "0.25"
+ringil-instinct = { path = "../ringil-instinct" }
