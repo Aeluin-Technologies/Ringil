@@ -1,11 +1,11 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/ringil-bridge",
     "crates/ringil-communication",
-    "crates/ringil-daemon",
-    "crates/ringil-instinct",
     "crates/ringil-mavlink",
-    "crates/ringil-spirit",
+    "crates/ringil-perception",
+    # "crates/ringil-spirit",
 ]
 
 [workspace.package]

@@ -6,7 +6,7 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use anyhow::Result;
-use ringil_instinct::InstinctEvent;
+use ringil_perception::InstinctEvent;
 use ringil_mavlink::{FlightDirector, MavlinkController};
 use tokio::sync::mpsc;
 use tracing_subscriber::{
@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
     };
 
     let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| format!("ringil_daemon={level},ringil_instinct={level},ringil_mavlink={level}").into());
+        .unwrap_or_else(|_| format!("ringil_daemon={level},ringil_perception={level},ringil_mavlink={level}").into());
 
     tracing_subscriber::registry()
         .with(env_filter)
