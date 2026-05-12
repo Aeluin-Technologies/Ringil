@@ -1,5 +1,5 @@
 [package]
-name = "ringil-instinct"
+name = "ringil-perception"
 description = "AI pipline for drone."
 version.workspace = true
 edition.workspace = true
