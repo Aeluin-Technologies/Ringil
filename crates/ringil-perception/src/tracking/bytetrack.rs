@@ -96,9 +96,13 @@ impl KalmanFilter {
             motion_cov[(i + 4, i + 4)] = std_vel[i].powi(2);
         }
         let mean = self.motion_mat * mean;
-        let covariance =
+        let mut covariance =
             self.motion_mat * covariance * self.motion_mat.transpose()
                 + motion_cov;
+
+        // Enforce numerical symmetry to prevent float32 drift over long sequences.
+        covariance = (covariance + covariance.transpose()) * 0.5;
+
         (mean, covariance)
     }
 
@@ -133,8 +137,12 @@ impl KalmanFilter {
         let innovation = measurement - projected_mean;
 
         let new_mean = mean + kalman_gain * innovation;
-        let new_covariance = covariance
+        let mut new_covariance = covariance
             - kalman_gain * innovation_cov * kalman_gain.transpose();
+
+        // Enforce numerical symmetry to prevent float32 drift over long sequences.
+        new_covariance = (new_covariance + new_covariance.transpose()) * 0.5;
+
         (new_mean, new_covariance)
     }
 }
@@ -201,12 +209,12 @@ impl STrack {
 
     /// Convert [x, y, w, h] to [center_x, center_y, aspect_ratio, height].
     fn tlwh_to_xyah(tlwh: &[f32; 4]) -> MeasurementVector {
-        MeasurementVector::from_vec(vec![
+        MeasurementVector::new(
             tlwh[0] + tlwh[2] / 2.0,
             tlwh[1] + tlwh[3] / 2.0,
             tlwh[2] / tlwh[3].max(1e-6),
             tlwh[3],
-        ])
+        )
     }
 
     /// Convert state vector back to bounding box format.
@@ -225,6 +233,28 @@ impl STrack {
         self.mean = mean;
         self.covariance = cov;
         self.tlwh = Self::xyah_to_tlwh(&self.mean);
+    }
+
+    /// Update tracklet with a matched detection.
+    pub fn update(
+        &mut self,
+        new_track: &STrack,
+        frame_id: usize,
+        kf: &KalmanFilter,
+    ) -> STrack {
+        self.frame_id = frame_id;
+        self.tracklet_len += 1;
+        self.state = TrackState::Tracked;
+        self.is_activated = true;
+        self.score = new_track.score;
+        self.tlwh = new_track.tlwh;
+
+        let measurement = Self::tlwh_to_xyah(&self.tlwh);
+        let (mean, cov) =
+            kf.update(&self.mean, &self.covariance, &measurement);
+        self.mean = mean;
+        self.covariance = cov;
+        self.clone()
     }
 
     /// Activate a new tracklet.
@@ -246,33 +276,8 @@ impl STrack {
         self.tracklet_len = 0;
     }
 
-    /// Update tracklet with a matched detection.
-    pub fn update(
-        &mut self,
-        new_track: &STrack,
-        frame_id: usize,
-        kf: &KalmanFilter,
-    ) {
-        self.frame_id = frame_id;
-        self.tracklet_len += 1;
-        self.state = TrackState::Tracked;
-        self.is_activated = true;
-        self.score = new_track.score;
-        self.tlwh = new_track.tlwh;
-
-        let measurement = Self::tlwh_to_xyah(&self.tlwh);
-        let (mean, cov) =
-            kf.update(&self.mean, &self.covariance, &measurement);
-        self.mean = mean;
-        self.covariance = cov;
-    }
-
     pub fn mark_lost(&mut self) {
         self.state = TrackState::Lost;
-    }
-
-    pub fn mark_removed(&mut self) {
-        self.state = TrackState::Removed;
     }
 }
 
@@ -288,6 +293,10 @@ pub struct ByteTrack {
     det_thresh: f32,
     kalman_filter: KalmanFilter,
     next_id: u64,
+    det_high_cache: Vec<STrack>,
+    det_low_cache: Vec<STrack>,
+    pool_cache: Vec<STrack>,
+    pool_unmatched_indices: Vec<usize>,
 }
 
 impl ByteTrack {
@@ -308,71 +317,103 @@ impl ByteTrack {
             det_thresh,
             kalman_filter: KalmanFilter::new(),
             next_id: 1,
+            det_high_cache: Vec::with_capacity(32),
+            det_low_cache: Vec::with_capacity(32),
+            pool_cache: Vec::with_capacity(64),
+            pool_unmatched_indices: Vec::with_capacity(64),
         }
     }
 
     /// Process a new frame of detections.
     pub fn update(
         &mut self,
-        detections: Vec<([f32; 4], f32, i64)>,
+        detections: &[([f32; 4], f32, i64)],
     ) -> Vec<STrack> {
         self.frame_id += 1;
         self.lost_ids.clear();
 
-        let mut det_high = Vec::new();
-        let mut det_low = Vec::new();
-        for (tlwh, score, class_id) in detections {
+        // Clear cached tracking layers from previous execution loop.
+        self.det_high_cache.clear();
+        self.det_low_cache.clear();
+        self.pool_cache.clear();
+        self.pool_unmatched_indices.clear();
+
+        // Parse borrowed slice inputs directly into pre-allocated memory caches.
+        for &(tlwh, score, class_id) in detections {
             let track = STrack::new(tlwh, score, class_id);
             if score >= self.track_thresh {
-                det_high.push(track);
+                self.det_high_cache.push(track);
             } else if score >= self.det_thresh {
-                det_low.push(track);
+                self.det_low_cache.push(track);
             }
         }
 
-        // Predict current position of existing tracks.
-        let mut pool = Vec::new();
+        // Predict current positions of tracks.
         for mut t in self.tracked_stracks.drain(..) {
             t.predict(&self.kalman_filter);
-            pool.push(t);
+            self.pool_cache.push(t);
         }
         for mut t in self.lost_stracks.drain(..) {
             t.predict(&self.kalman_filter);
-            pool.push(t);
+            self.pool_cache.push(t);
         }
 
-        let (matches_high, unmatch_high, unmatch_trk) =
-            Self::associate(&pool, &det_high, self.match_thresh);
+        let (matches_high, unmatch_high, unmatch_trk) = Self::associate(
+            &self.pool_cache,
+            &self.det_high_cache,
+            self.match_thresh,
+        );
 
-        let mut new_tracked = Vec::new();
+        let mut new_tracked = Vec::with_capacity(
+            self.pool_cache.len() + self.det_high_cache.len(),
+        );
+
+        // Track indices that were matched during first stage.
+        let mut matched_pool_indices =
+            HashSet::with_capacity(matches_high.len());
+
         for (trk_idx, det_idx) in matches_high {
-            pool[trk_idx].update(
-                &det_high[det_idx],
+            matched_pool_indices.insert(trk_idx);
+            let updated_track = self.pool_cache[trk_idx].update(
+                &self.det_high_cache[det_idx],
                 self.frame_id,
                 &self.kalman_filter,
             );
-            new_tracked.push(pool[trk_idx].clone());
+            new_tracked.push(updated_track);
         }
 
-        let mut pool_unmatched = Vec::new();
+        // Second association pass focuses strictly on remaining non-lost
+        // active tracks against low-confidence detections.
         for &idx in &unmatch_trk {
-            if pool[idx].state == TrackState::Tracked {
-                pool_unmatched.push(pool[idx].clone());
+            if self.pool_cache[idx].state == TrackState::Tracked {
+                self.pool_unmatched_indices.push(idx);
             }
         }
+
+        let secondary_tracks_view: Vec<STrack> = self
+            .pool_unmatched_indices
+            .iter()
+            .map(|&idx| self.pool_cache[idx].clone())
+            .collect();
+
         let (matches_low, _, unmatch_low_trk) =
-            Self::associate(&pool_unmatched, &det_low, 0.5);
-        for (trk_idx, det_idx) in matches_low {
-            pool_unmatched[trk_idx].update(
-                &det_low[det_idx],
+            Self::associate(&secondary_tracks_view, &self.det_low_cache, 0.5);
+
+        for (view_idx, det_idx) in matches_low {
+            let actual_pool_idx = self.pool_unmatched_indices[view_idx];
+            matched_pool_indices.insert(actual_pool_idx);
+
+            let updated_track = self.pool_cache[actual_pool_idx].update(
+                &self.det_low_cache[det_idx],
                 self.frame_id,
                 &self.kalman_filter,
             );
-            new_tracked.push(pool_unmatched[trk_idx].clone());
+            new_tracked.push(updated_track);
         }
 
-        for &idx in &unmatch_low_trk {
-            let mut t = pool_unmatched[idx].clone();
+        for &view_idx in &unmatch_low_trk {
+            let actual_pool_idx = self.pool_unmatched_indices[view_idx];
+            let mut t = self.pool_cache[actual_pool_idx].clone();
             if t.state != TrackState::Lost {
                 t.mark_lost();
                 self.lost_ids.insert(t.track_id);
@@ -381,13 +422,15 @@ impl ByteTrack {
         }
 
         for &idx in &unmatch_trk {
-            if pool[idx].state == TrackState::Lost {
-                self.lost_stracks.push(pool[idx].clone());
+            if !matched_pool_indices.contains(&idx)
+                && self.pool_cache[idx].state == TrackState::Lost
+            {
+                self.lost_stracks.push(self.pool_cache[idx].clone());
             }
         }
 
         for &det_idx in &unmatch_high {
-            let mut new_t = det_high[det_idx].clone();
+            let mut new_t = self.det_high_cache[det_idx].clone();
             if new_t.score >= self.track_thresh {
                 new_t.activate(
                     &self.kalman_filter,
@@ -399,8 +442,12 @@ impl ByteTrack {
             }
         }
 
+        // Evict expired tracklets out of buffer window constraints.
+        let current_frame = self.frame_id;
+        let max_buffer = self.track_buffer;
         self.lost_stracks
-            .retain(|t| self.frame_id - t.frame_id <= self.track_buffer);
+            .retain(|t| current_frame - t.frame_id <= max_buffer);
+
         self.tracked_stracks = new_tracked;
 
         self.tracked_stracks
@@ -436,9 +483,11 @@ impl ByteTrack {
                 costs.push((cost, r, c));
             }
         }
-        costs.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
-        let mut matches = Vec::new();
+        costs.sort_unstable_by(|a, b| a.0.to_bits().cmp(&b.0.to_bits()));
+
+        let mut matches =
+            Vec::with_capacity(tracks.len().min(detections.len()));
         let mut unmatched_tracks: HashSet<usize> = (0..tracks.len()).collect();
         let mut unmatched_dets: HashSet<usize> =
             (0..detections.len()).collect();
