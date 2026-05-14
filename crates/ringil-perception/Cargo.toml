@@ -7,15 +7,19 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-anyhow = "1"
+eyre = "0"
 tokio = { version = "1", features = ["full"] }
-ort = { git = "https://github.com/pykeio/ort.git", rev = "f085e4c2516901ee606d1e10022142afa9348bf1", features = ["tensorrt", "cuda", "coreml"] }
-ultralytics-inference = { git = "https://github.com/ultralytics/inference.git", features = ["tensorrt", "cuda", "coreml"] }
+serde = { version = "1", features = ["derive"] }
+tracing = "0.1"
+
+arrow = "58.3"
+dora-node-api = "0.5"
 gstreamer = "0.25"
 gstreamer-app = "0.25"
+
+ort = { git = "https://github.com/pykeio/ort.git", rev = "f085e4c2516901ee606d1e10022142afa9348bf1", features = ["tensorrt", "cuda", "coreml"] }
+ultralytics-inference = { git = "https://github.com/ultralytics/inference.git", features = ["tensorrt", "cuda", "coreml"] }
 image = "0.25"
 fast_image_resize = "6.0"
 ndarray = "0.17"
 nalgebra = "0.34"
-serde = { version = "1", features = ["derive"] }
-tracing = "0.1"

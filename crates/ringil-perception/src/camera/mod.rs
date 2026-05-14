@@ -1,4 +1,4 @@
-use anyhow::Result;
+use eyre::Result;
 use image::DynamicImage;
 
 /// Standard trait for camera inputs (GStreamer, V4L2, Dummy).

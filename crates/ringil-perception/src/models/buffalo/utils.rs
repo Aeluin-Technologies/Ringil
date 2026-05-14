@@ -1,6 +1,6 @@
 //! Image-related functions.
 
-use anyhow::{Context, Result};
+use eyre::{ContextCompat, Result};
 use fast_image_resize::images::Image;
 use fast_image_resize::{PixelType, ResizeOptions, Resizer};
 use image::{DynamicImage, RgbImage, Rgba32FImage};

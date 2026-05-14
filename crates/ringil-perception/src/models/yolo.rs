@@ -1,6 +1,6 @@
 //! YOLO models handler.
 
-use anyhow::{Context, Result};
+use eyre::{Context, Result};
 use image::DynamicImage;
 use ultralytics_inference::{Device, InferenceConfig, YOLOModel};
 

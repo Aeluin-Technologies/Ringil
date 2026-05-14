@@ -7,8 +7,8 @@ mod warp;
 
 use std::path::Path;
 
-use anyhow::{Context, Result};
 use detection::{distance2bbox, distance2kps, nms};
+use eyre::{Context, Result};
 use image::{DynamicImage, Rgba32FImage};
 use ort::inputs;
 use ort::session::Session;
@@ -65,7 +65,7 @@ impl BuffaloExtractor {
         faces = nms(faces, 0.4);
 
         if faces.is_empty() {
-            return Err(anyhow::anyhow!("No faces detected"));
+            return Err(eyre::eyre!("No faces detected"));
         }
 
         // Match detected faces with the tracker's bounding box using Euclidean
