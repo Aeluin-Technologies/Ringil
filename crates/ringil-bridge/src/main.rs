@@ -6,8 +6,8 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use anyhow::Result;
-use ringil_perception::InstinctEvent;
 use ringil_mavlink::{FlightDirector, MavlinkController};
+use ringil_perception::InstinctEvent;
 use tokio::sync::mpsc;
 use tracing_subscriber::{
     EnvFilter, layer::SubscriberExt, util::SubscriberInitExt,

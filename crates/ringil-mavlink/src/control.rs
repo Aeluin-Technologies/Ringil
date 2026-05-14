@@ -1,6 +1,6 @@
 use crate::connection::MavlinkController;
 use anyhow::Result;
-use ringil_instinct::events::{InstinctEvent, ObjectClass};
+use ringil_perception::events::{InstinctEvent, ObjectClass};
 
 /// Orchestrates flight behavior by translating vision events into MAVLink commands.
 pub struct FlightDirector {
@@ -71,7 +71,7 @@ impl FlightDirector {
     /// Calculates repulsive maneuvers to avoid imminent collisions.
     async fn handle_avoidance(
         &self,
-        obb: &ringil_instinct::OrientedBoundingBox,
+        obb: &ringil_perception::OrientedBoundingBox,
         cam_width: f32,
         cam_height: f32,
     ) -> Result<()> {
@@ -99,7 +99,7 @@ impl FlightDirector {
     /// Computes P-loop adjustments to maintain a fixed distance and heading to a person.
     async fn handle_tracking(
         &self,
-        obb: &ringil_instinct::OrientedBoundingBox,
+        obb: &ringil_perception::OrientedBoundingBox,
         cam_width: f32,
         cam_height: f32,
     ) -> Result<()> {

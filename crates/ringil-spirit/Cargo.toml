@@ -12,4 +12,4 @@ tracing = "0.1"
 rclrs = { version = "0.7" }
 rosidl_runtime_rs = "0.6"
 image = "0.25"
-ringil-instinct = { path = "../ringil-instinct" }
+ringil-perception = { path = "../ringil-perception" }
