@@ -1,4 +1,4 @@
 /target
 .DS_Store
-models/buffalo_l/
-models/yolo26n.onnx
+models/buffalo_s/
+models/yolo26s.onnx
