@@ -27,7 +27,7 @@ pub struct InstinctPipeline {
 impl InstinctPipeline {
     /// Create a new [`InstinctPipeline`].
     pub fn new() -> Result<Self> {
-        let yolo = YoloDetector::new("../../models/yolo26n.onnx")
+        let yolo = YoloDetector::new("../../models/yolo26s.onnx")
             .context("Failed to load YOLO model")?;
         let tracker = ByteTrack::new(0.5, 30, 0.8, 0.6);
 
@@ -111,7 +111,7 @@ impl InstinctPipeline {
     ) {
         thread::spawn(move || {
             let mut buffalo = match BuffaloExtractor::new(
-                "../../models/buffalo_l",
+                "../../models/buffalo_s",
             ) {
                 Ok(b) => b,
                 Err(err) => {
