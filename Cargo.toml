@@ -14,6 +14,9 @@ edition = "2024"
 license = ""
 repository = "https://github.com/RealHinome/Ringil"
 
+[workspace.dependencies]
+flume = "0.12"
+
 [profile.release]
 opt-level = 3
 lto = true

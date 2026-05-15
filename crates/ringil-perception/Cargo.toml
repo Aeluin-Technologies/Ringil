@@ -9,6 +9,7 @@ repository.workspace = true
 [dependencies]
 eyre = "0"
 tokio = { version = "1", features = ["full"] }
+flume = { workspace = true }
 serde = { version = "1", features = ["derive"] }
 tracing = "0.1"
 

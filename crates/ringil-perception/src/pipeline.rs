@@ -1,7 +1,8 @@
-use std::sync::mpsc;
+use std::sync::Arc;
 use std::thread;
 
 use eyre::{Context, Result};
+use flume;
 use image::DynamicImage;
 
 use crate::events::{InstinctEvent, ObjectClass, OrientedBoundingBox};
@@ -11,14 +12,15 @@ use crate::tracking::bytetrack::{ByteTrack, TrackState};
 
 struct BuffaloJob {
     track_id: u64,
-    cropped_image: DynamicImage,
+    full_image: Arc<DynamicImage>,
+    bbox: [f32; 4],
 }
 
 pub struct InstinctPipeline {
     yolo: YoloDetector,
     tracker: ByteTrack,
-    buffalo_tx: mpsc::SyncSender<BuffaloJob>,
-    pub buffalo_rx: mpsc::Receiver<InstinctEvent>,
+    buffalo_tx: flume::Sender<BuffaloJob>,
+    pub buffalo_rx: flume::Receiver<InstinctEvent>,
     tracking_cache: Vec<([f32; 4], f32, i64)>,
 }
 
@@ -29,8 +31,8 @@ impl InstinctPipeline {
             .context("Failed to load YOLO model")?;
         let tracker = ByteTrack::new(0.5, 30, 0.8, 0.6);
 
-        let (buffalo_tx, rx) = mpsc::sync_channel(16);
-        let (tx, buffalo_rx) = mpsc::channel();
+        let (buffalo_tx, rx) = flume::bounded(16);
+        let (tx, buffalo_rx) = flume::unbounded();
 
         Self::spawn_buffalo_worker(rx, tx);
 
@@ -58,6 +60,7 @@ impl InstinctPipeline {
         }
 
         let active_tracks = self.tracker.update(&self.tracking_cache);
+        let shared_image = Arc::new(image);
 
         for track in active_tracks {
             let class = ObjectClass::from(track.class_id);
@@ -84,18 +87,11 @@ impl InstinctPipeline {
                 });
 
                 if track.state == TrackState::New && track.is_activated {
-                    let x = track.tlwh[0].max(0.0) as u32;
-                    let y = track.tlwh[1].max(0.0) as u32;
-                    let w = track.tlwh[2].min(image.width() as f32) as u32;
-                    let h = track.tlwh[3].min(image.height() as f32) as u32;
-
-                    if w > 0 && h > 0 {
-                        let cropped = image.crop_imm(x, y, w, h);
-                        let _ = self.buffalo_tx.try_send(BuffaloJob {
-                            track_id: track.track_id,
-                            cropped_image: cropped,
-                        });
-                    }
+                    let _ = self.buffalo_tx.try_send(BuffaloJob {
+                        track_id: track.track_id,
+                        full_image: Arc::clone(&shared_image),
+                        bbox: track.tlwh,
+                    });
                 }
             }
         }
@@ -110,8 +106,8 @@ impl InstinctPipeline {
     /// Dedicated OS thread worker for heavy Re-ID inference (Buffalo).
     /// Removes reliance on Tokio runtime states.
     fn spawn_buffalo_worker(
-        rx: mpsc::Receiver<BuffaloJob>,
-        event_tx: mpsc::Sender<InstinctEvent>,
+        rx: flume::Receiver<BuffaloJob>,
+        event_tx: flume::Sender<InstinctEvent>,
     ) {
         thread::spawn(move || {
             let mut buffalo = match BuffaloExtractor::new(
@@ -128,31 +124,40 @@ impl InstinctPipeline {
             };
 
             while let Ok(job) = rx.recv() {
-                // The background worker receives a tight, lightweight crop
-                // wrapper containing only the localized person dimensions.
-                let bbox_placeholder = [
-                    0.0,
-                    0.0,
-                    job.cropped_image.width() as f32,
-                    job.cropped_image.height() as f32,
-                ];
+                let x = job.bbox[0].max(0.0) as u32;
+                let y = job.bbox[1].max(0.0) as u32;
+                let w = job.bbox[2].min(job.full_image.width() as f32) as u32;
+                let h = job.bbox[3].min(job.full_image.height() as f32) as u32;
 
-                match buffalo.extract(&job.cropped_image, bbox_placeholder) {
-                    Ok(embedding) => {
-                        let _ = event_tx.send(
-                            InstinctEvent::PersonIdentityExtracted {
-                                track_id: job.track_id,
-                                embedding,
-                            },
-                        );
-                    },
-                    Err(err) => {
-                        tracing::debug!(
-                            track_id = ?job.track_id,
-                            ?err,
-                            "failed to extract person re-id embedding"
-                        );
-                    },
+                if w > 0 && h > 0 {
+                    let cropped = job.full_image.crop_imm(x, y, w, h);
+
+                    // The background worker receives a tight, lightweight crop
+                    // wrapper containing only the localized person dimensions.
+                    let bbox_placeholder = [
+                        0.0,
+                        0.0,
+                        cropped.width() as f32,
+                        cropped.height() as f32,
+                    ];
+
+                    match buffalo.extract(&cropped, bbox_placeholder) {
+                        Ok(embedding) => {
+                            let _ = event_tx.send(
+                                InstinctEvent::PersonIdentityExtracted {
+                                    track_id: job.track_id,
+                                    embedding,
+                                },
+                            );
+                        },
+                        Err(err) => {
+                            tracing::debug!(
+                                track_id = ?job.track_id,
+                                ?err,
+                                "failed to extract person re-id embedding"
+                            );
+                        },
+                    }
                 }
             }
         });
