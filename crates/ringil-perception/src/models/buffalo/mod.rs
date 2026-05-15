@@ -27,8 +27,8 @@ pub struct BuffaloExtractor {
 
 impl BuffaloExtractor {
     // Initializes the ONNX sessions.
-    pub fn new(models_dir: &str) -> Result<Self> {
-        let path = Path::new(models_dir);
+    pub fn new(models_dir: impl AsRef<Path>) -> Result<Self> {
+        let path = models_dir.as_ref();
         let build = |file: &str| -> Result<Session> {
             Session::builder()?
                 .with_optimization_level(GraphOptimizationLevel::Level3)

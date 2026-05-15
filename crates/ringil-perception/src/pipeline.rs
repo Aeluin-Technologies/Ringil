@@ -1,3 +1,4 @@
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::thread;
 
@@ -27,7 +28,7 @@ pub struct InstinctPipeline {
 impl InstinctPipeline {
     /// Create a new [`InstinctPipeline`].
     pub fn new() -> Result<Self> {
-        let yolo = YoloDetector::new("../../models/yolo26s.onnx")
+        let yolo = YoloDetector::new(get_model_path("yolo26s.onnx"))
             .context("Failed to load YOLO model")?;
         let tracker = ByteTrack::new(0.5, 30, 0.8, 0.6);
 
@@ -110,9 +111,9 @@ impl InstinctPipeline {
         event_tx: flume::Sender<InstinctEvent>,
     ) {
         thread::spawn(move || {
-            let mut buffalo = match BuffaloExtractor::new(
-                "../../models/buffalo_s",
-            ) {
+            let mut buffalo = match BuffaloExtractor::new(get_model_path(
+                "buffalo_s",
+            )) {
                 Ok(b) => b,
                 Err(err) => {
                     tracing::error!(
@@ -162,4 +163,24 @@ impl InstinctPipeline {
             }
         });
     }
+}
+
+fn get_model_path(model_name: &str) -> PathBuf {
+    if let Ok(env_path) = std::env::var("MODEL_DIR") {
+        return Path::new(&env_path).join(model_name);
+    }
+
+    if let Some(manifest_dir) = option_env!("CARGO_MANIFEST_DIR") {
+        let crate_path = Path::new(manifest_dir);
+        if let Some(workspace_root) =
+            crate_path.parent().and_then(|p| p.parent())
+        {
+            let model_path = workspace_root.join("models").join(model_name);
+            if model_path.exists() {
+                return model_path;
+            }
+        }
+    }
+
+    Path::new("models").join(model_name)
 }
