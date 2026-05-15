@@ -24,3 +24,9 @@ image = "0.25"
 fast_image_resize = "6.0"
 ndarray = "0.17"
 nalgebra = "0.34"
+
+[dev-dependencies]
+ffmpeg-next = "8"
+imageproc = "0.26"
+ab_glyph = "0.2.32"
+dejavu = "2.37"
