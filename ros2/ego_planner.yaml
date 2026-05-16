@@ -1,0 +1,31 @@
+# This configuration is designed for low-quality sensors.
+# Lifecycle node changes it dynamically.
+ego_planner_node:
+  ros__parameters:
+    drone_id: 0
+    swarm_num: 1
+
+    odom_world: "/drone_0/odom"  
+    map/cloud: "/drone_0/lidar_cloud"
+    map_frame_id: "world"
+
+    map/resolution: 0.10
+    map/local_update_range_x: 10.0
+    map/local_update_range_y: 6.0
+    map/local_update_range_z: 3.0
+    map/obstacle_inflation: 0.35
+    map/sensor_type: 2
+    map/pose_type: 1
+
+    max_vel: 2.8 # 10km/h
+    max_acc: 3.0
+    max_jerk: 10.0
+
+    optimization/weight_obstacle: 10000.0
+    optimization/weight_smoothness: 100.0
+    optimization/weight_feasibility: 50.0
+    optimization/weight_swarm: 1000.0
+
+    planning/safety_clearance: 0.4
+    planning/swarm_clearance: 0.6
+    planning/horizon: 4.0

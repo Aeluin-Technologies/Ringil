@@ -11,7 +11,7 @@ library of academic and industrial research.
 | **RTAB-Map** | SLAM & Sensor Abstraction | LiDAR, PointClouds, VIO | `/rtabmap/mapData`, `/octomap` | Merges heterogeneous sensors into a single 3D map and handles loop closure. |
 | **GTSAM** | Pose Graph Optimization | Odom constraints, Loop closures | Optimized Trajectory | Ensures the drone's path is mathematically smoothed and drift-corrected. |
 | **nvblox** | 3D Reconstruction | Depth Images, PointClouds | ESDF (Distance Field) | Transforms raw points into a GPU-based distance map for fast obstacle avoidance. |
-| **Nav2** | Path Planning & Control | Map, Odom, Costmaps | `cmd_vel` (Velocity) | Calculates global and local paths while avoiding obstacles in real-time. |
+| **EGO-Swarm** | Trajectory Generation | Map/ESDF, Odometry, Peer Broadcasts | Position/Vel/Acc Setpoints | Generates collision-free MINCO trajectory splines dynamically without costly global re-planning; handles multi-agent avoidance asynchronously. |
 
 ```mermaid
 flowchart TB
@@ -43,23 +43,28 @@ flowchart TB
 
     subgraph Autonomy_Control ["Navigation & Flight"]
         direction TB
-        A_Nav2["Nav2 Stack"]:::navNode
+        A_Ego["EGO-Swarm Planner"]:::navNode
         A_FCU["Flight Controller (PX4/Ardu)"]:::hardware
     end
 
-    %% Connections
+    subgraph Swarm_Comms ["Inter-Agent Network"]
+        W_Mesh(("Decentralized Mesh Broadcast")):::sensor
+    end
+
     S_LiDAR & P_Conv --> C_RTAB
     S_EvCam --> P_Conv
-    
+
     S_Cam & S_IMU --> P_VSLAM
-    
+
     P_VSLAM ==>|High-Freq Odometry| C_RTAB
     C_RTAB <--> C_GTSAM
-    
+
     C_RTAB -->|Filtered Cloud| P_NVB
-    P_NVB ==>|3D Costmap| A_Nav2
-    C_RTAB -->|Optimized Pose| A_Nav2
+    P_NVB ==>|3D Costmap / ESDF| A_Ego
+    C_RTAB -->|Optimized Pose| A_Ego
     
-    A_Nav2 ==>|cmd_vel / Setpoints| A_FCU
+    W_Mesh <-->|Peer Positions & Trajectories| A_Ego
+
+    A_Ego ==>|Position / Vel / Acc Setpoints| A_FCU
     A_FCU -.->|State Feedback| P_VSLAM
 ```

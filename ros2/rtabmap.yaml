@@ -1,0 +1,29 @@
+rtabmap:
+  ros__parameters:
+    subscribe_depth: true
+    subscribe_rgb: true
+    subscribe_odom_info: false
+    subscribe_scan_3d: true
+
+    frame_id: "base_link"
+    map_frame_id: "map"
+    odom_frame_id: "odom"
+
+    odom_topic: "/visual_odom"
+    rgb_topic: "/camera/color/image_raw"
+    depth_topic: "/camera/depth/image_rect_raw"
+    camera_info_topic: "/camera/color/camera_info"
+    scan_3d_topic: "/lidar_cloud"
+
+    Reg/Strategy: "2" # Visual + LiDAR
+    Reg/Force3DoF: "false"
+
+    Optimizer/Strategy: "2" # GTSAM
+    Optimizer/Robust: "true"
+    GTSAM/Optimizer: "1" # 0=Levenberg-Marquardt, 1=Gauss-Newton, 2=Dogleg
+    GTSAM/Epsilon: "0.00001"
+    GTSAM/RobustPenalty: "true"
+    Grid/FromDepth: "false"
+    RGBD/ProximityBySpace: "true" # Local loop closures.
+    RGBD/OptimizeMaxError: "0.1"
+    Mem/IncrementalMemory: "true"

@@ -1,0 +1,20 @@
+visual_slam_node:
+  ros__parameters:
+    tracking_mode: 1
+    num_cameras: 2
+    denoise_input_images: true
+    rectified_images: true
+    enable_imu_fusion: false # enable this if you have an IMU sensor.
+    gyro_noise_density: 0.000244
+    gyro_random_walk: 0.000019393
+    accel_noise_density: 0.001862
+    accel_random_walk: 0.003
+
+    # TF Frames.
+    base_frame: "base_link"
+    odom_frame: "odom"
+    map_frame: "map"
+
+    # Output Odometry for RTAB-Map.
+    publish_odom_to_base_tf: true
+    publish_map_to_odom_tf: false # RTAB-Map handles map->odom!

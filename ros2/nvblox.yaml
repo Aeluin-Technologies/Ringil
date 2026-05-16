@@ -1,0 +1,12 @@
+nvblox_node:
+  ros__parameters:
+    voxel_size: 0.05
+    global_frame: "odom"
+
+    slice_bounds_z_min: -0.2
+    slice_bounds_z_max: 1.0
+    esdf_2d_publish_rate_hz: 10.0
+
+    use_depth: true
+    use_lidar: false
+    input_qos: "SENSOR_DATA"
