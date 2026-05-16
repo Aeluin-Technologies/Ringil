@@ -23,6 +23,7 @@ use ringil_perception::{
 fn test_render_annotated_video() -> Result<()> {
     ffmpeg::init()?;
     let mut pipeline = InstinctPipeline::new()?;
+    pipeline.extract_embeddings(false); // disable bufflo.
 
     let manifest_dir = option_env!("CARGO_MANIFEST_DIR")
         .ok_or_else(|| eyre::eyre!("CARGO_MANIFEST_DIR missing"))?;
@@ -136,7 +137,6 @@ fn test_render_annotated_video() -> Result<()> {
 
             let events = pipeline.process_frame(dynamic_frame.clone())?;
 
-            active_tracks.clear();
             for event in events {
                 if let InstinctEvent::ObstacleDetected {
                     id,
@@ -146,6 +146,20 @@ fn test_render_annotated_video() -> Result<()> {
                 } = event
                 {
                     active_tracks.insert(id, (class, obb, confidence));
+                }
+                match event {
+                    InstinctEvent::ObstacleDetected {
+                        id,
+                        class,
+                        obb,
+                        confidence,
+                    } => {
+                        active_tracks.insert(id, (class, obb, confidence));
+                    },
+                    InstinctEvent::TrackLost(id) => {
+                        active_tracks.remove(&id);
+                    },
+                    _ => {},
                 }
             }
             while let Ok(_) = pipeline.buffalo_rx.try_recv() {}

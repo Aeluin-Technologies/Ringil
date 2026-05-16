@@ -23,6 +23,7 @@ pub struct InstinctPipeline {
     buffalo_tx: flume::Sender<BuffaloJob>,
     pub buffalo_rx: flume::Receiver<InstinctEvent>,
     tracking_cache: Vec<([f32; 4], f32, i64)>,
+    buffalo_enabled: bool,
 }
 
 impl InstinctPipeline {
@@ -30,7 +31,7 @@ impl InstinctPipeline {
     pub fn new() -> Result<Self> {
         let yolo = YoloDetector::new(get_model_path("yolo26s.onnx"))
             .context("Failed to load YOLO model")?;
-        let tracker = ByteTrack::new(0.5, 30, 0.8, 0.6);
+        let tracker = ByteTrack::new(0.5, 180, 0.8, 0.6);
 
         let (buffalo_tx, rx) = flume::bounded(16);
         let (tx, buffalo_rx) = flume::unbounded();
@@ -43,7 +44,13 @@ impl InstinctPipeline {
             buffalo_tx,
             buffalo_rx,
             tracking_cache: Vec::with_capacity(32),
+            buffalo_enabled: true,
         })
+    }
+
+    /// Dynamically enable or disable Buffalo extractions at runtime.
+    pub fn extract_embeddings(&mut self, enabled: bool) {
+        self.buffalo_enabled = enabled;
     }
 
     /// Processes a single frame and returns a batch of immediate events.
@@ -87,7 +94,10 @@ impl InstinctPipeline {
                     obb,
                 });
 
-                if track.state == TrackState::New && track.is_activated {
+                if self.buffalo_enabled
+                    && track.state == TrackState::New
+                    && track.is_activated
+                {
                     let _ = self.buffalo_tx.try_send(BuffaloJob {
                         track_id: track.track_id,
                         full_image: Arc::clone(&shared_image),
