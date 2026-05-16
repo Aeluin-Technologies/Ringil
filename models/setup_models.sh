@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Downloading yolo26s-ONNX (FP16)..."
-HF_URL="https://huggingface.co/onnx-community/yolo26s-ONNX/resolve/main/onnx/model_fp16.onnx"
+HF_URL="https://github.com/Aeluin-Technologies/models/releases/download/yolo26s/yolo26s.onnx"
 curl -L $HF_URL -o yolo26s.onnx
 
 echo "Downloading and extracting buffalo_s..."
