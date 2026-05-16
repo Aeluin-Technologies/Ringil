@@ -18,8 +18,8 @@ dora-node-api = "0.5"
 gstreamer = "0.25"
 gstreamer-app = "0.25"
 
-ort = { git = "https://github.com/pykeio/ort.git", rev = "f085e4c2516901ee606d1e10022142afa9348bf1", features = ["tensorrt", "cuda", "coreml"] }
-ultralytics-inference = { git = "https://github.com/ultralytics/inference.git", features = ["tensorrt", "cuda", "coreml"] }
+ort = { version = "2.0.0-rc.12", features = ["tensorrt", "cuda"] }
+ultralytics-inference = { version = "0.0.15", features = ["tensorrt", "cuda"] }
 image = "0.25"
 fast_image_resize = "6.0"
 ndarray = "0.17"
