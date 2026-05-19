@@ -1,0 +1,4 @@
+[submodule "ros2/src/ego-planner-swarm"]
+	path = ros2/src/ego-planner-swarm
+	url = https://github.com/ZJU-FAST-Lab/ego-planner-swarm.git
+	branch = ros2_version

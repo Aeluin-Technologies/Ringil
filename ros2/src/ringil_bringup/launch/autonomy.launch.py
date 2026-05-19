@@ -11,7 +11,7 @@ def generate_launch_description():
     package_name = "ringil_bringup"
     config_dir = os.path.join(get_package_share_directory(package_name), "config")
 
-    nav2_yaml = os.path.join(config_dir, "nav2.yaml")
+    planner_yaml = os.path.join(config_dir, "ego_planner.yaml")
     rtabmap_yaml = os.path.join(config_dir, "rtabmap.yaml")
     nvblox_yaml = os.path.join(config_dir, "nvblox.yaml")
     isaac_vslam_yaml = os.path.join(config_dir, "isaac_ros_vslam.yaml")
@@ -38,15 +38,12 @@ def generate_launch_description():
                 name="nvblox_node",
                 parameters=[nvblox_yaml],
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(
-                        get_package_share_directory("nav2_bringup"),
-                        "launch",
-                        "navigation_launch.py",
-                    )
-                ),
-                launch_arguments={"params_file": nav2_yaml}.items(),
+            Node(
+                package="ego_planner",
+                executable="ego_planner_node",
+                name="ego_planner_node",
+                parameters=[planner_yaml],
+                output="screen",
             ),
         ]
     )

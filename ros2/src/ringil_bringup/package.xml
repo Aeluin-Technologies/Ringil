@@ -3,7 +3,7 @@
 <package format3>
   <name>ringil_bringup</name>
   <version>0.0.1</version>
-  <description>Launch Ringil (VSLAM, RTAB-Map, nvblox et Nav2)</description>
+  <description>Launch Ringil (VSLAM, RTAB-Map, nvblox and EgoPlanner)</description>
 
   <maintainer email="aeluin@gravitalia.com">Aeluin Technologies</maintainer>
   <license>AGPL3</license>
@@ -17,7 +17,7 @@
   <exec_depend>isaac_ros_visual_slam</exec_depend>
   <exec_depend>rtabmap_slam</exec_depend>
   <exec_depend>nvblox_ros</exec_depend>
-  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>ego_planner</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

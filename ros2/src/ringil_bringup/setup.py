@@ -18,7 +18,7 @@ setup(
     zip_safe=True,
     maintainer="Aeluin Technologies",
     maintainer_email="aeluin@gravitalia.com",
-    description="Launch Ringil (VSLAM, RTAB-Map, nvblox et Nav2)",
+    description="Launch Ringil (VSLAM, RTAB-Map, nvblox and EgoPlanner)",
     license="AGPL3",
     tests_require=["pytest"],
     entry_points={
