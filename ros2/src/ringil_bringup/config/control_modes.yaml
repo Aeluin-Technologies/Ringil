@@ -1,0 +1,27 @@
+control_modes:
+  ros__parameters:
+    control_modes:
+      - hover:
+          control_mode: "HOVER"
+          yaw_mode: "NONE"
+          reference_frame: "NONE"
+
+      - speed_angle_enu:
+          control_mode: "SPEED"
+          yaw_mode: "ANGLE"
+          reference_frame: "ENU"
+
+      - speed_speed_enu:
+          control_mode: "SPEED"
+          yaw_mode: "SPEED"
+          reference_frame: "ENU"
+
+      - attitude_angle:
+          control_mode: "ATTITUDE"
+          yaw_mode: "ANGLE"
+          reference_frame: "NONE"
+
+      - acro:
+          control_mode: "ACRO"
+          yaw_mode: "NONE"
+          reference_frame: "NONE"

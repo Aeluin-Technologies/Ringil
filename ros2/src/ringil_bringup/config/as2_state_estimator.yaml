@@ -1,0 +1,6 @@
+as2_state_estimator:
+  ros__parameters:
+    plugin_name: "raw_odometry"
+    odom_topic: "/visual_odom"
+    base_frame: "base_link"
+    global_frame: "odom"
