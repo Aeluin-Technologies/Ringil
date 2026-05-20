@@ -17,4 +17,4 @@ visual_slam_node:
 
     # Output Odometry for RTAB-Map.
     publish_odom_to_base_tf: true
-    publish_map_to_odom_tf: false # RTAB-Map handles map->odom!
+    publish_map_to_odom_tf: true # RTAB-Map handles map->odom!

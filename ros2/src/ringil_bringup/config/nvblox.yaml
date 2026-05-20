@@ -10,3 +10,6 @@ nvblox_node:
     use_depth: true
     use_lidar: false
     input_qos: "SENSOR_DATA"
+
+    compute_mesh: false
+    compute_esdf: true
