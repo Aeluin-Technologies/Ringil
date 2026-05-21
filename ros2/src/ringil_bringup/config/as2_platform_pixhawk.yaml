@@ -1,4 +1,4 @@
-as2_platform_pixhawk:
+/**:
   ros__parameters:
     uav_odometry_frequency: 30.0
     base_frame: "base_link"

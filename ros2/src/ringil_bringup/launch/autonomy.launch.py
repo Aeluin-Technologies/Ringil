@@ -2,7 +2,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch_ros.actions import Node
+from launch_ros.actions import ComposableNodeContainer, Node
+from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
@@ -17,51 +18,51 @@ def generate_launch_description():
     as2_platform_pixhawk_yaml = os.path.join(config_dir, "as2_platform_pixhawk.yaml")
     as2_control_modes_yaml = os.path.join(config_dir, "control_modes.yaml")
 
-    return LaunchDescription(
-        [
-            Node(
+    nvidia_container = ComposableNodeContainer(
+        name="ringil_nvidia_container",
+        namespace="",
+        package="rclcpp_components",
+        executable="component_container_mt",
+        composable_node_descriptions=[
+            ComposableNode(
                 package="isaac_ros_visual_slam",
-                executable="isaac_ros_visual_slam",
+                plugin="nvidia::isaac_ros::visual_slam::VisualSlamNode",
                 name="visual_slam_node",
                 parameters=[isaac_vslam_yaml],
-                remappings=[("visual_slam/odom", "/visual_odom")],
+                remappings=[("visual_slam/tracking/odometry", "visual_odom")]
             ),
-            # Node(
-            #    package="rtabmap_slam",
-            #    executable="rtabmap",
-            #    name="rtabmap",
-            #    parameters=[rtabmap_yaml],
-            #    arguments=["-d"],  # Delete previous database on start.
-            # ),
-            Node(
-                package="nvblox_ros",
-                executable="nvblox_node",
+            ComposableNode(
+                package="isaac_ros_nvblox",
+                plugin="nvidia::isaac_ros::nvblox::NvbloxNode",
                 name="nvblox_node",
                 parameters=[nvblox_yaml],
             ),
-            # Node(
-            #     package="ego_planner",
-            #    executable="ego_planner_node",
-            #    name="ego_planner_node",
-            #    parameters=[planner_yaml],
-            #    output="screen",
-            # ),
-            Node(
-                package="as2_state_estimator",
-                executable="as2_state_estimator_node",
-                name="as2_state_estimator_node",
-                parameters=[as2_state_estimator_yaml],
-            ),
-            Node(
-                package="as2_platform_pixhawk",
-                executable="as2_platform_pixhawk_node",
-                name="as2_platform_pixhawk_node",
-                output="screen",
-                emulate_tty=True,
-                parameters=[
-                    as2_platform_pixhawk_yaml,
-                    {"control_modes_file": as2_control_modes_yaml}
-                ],
-            ),
         ],
+        output="screen",
+    )
+
+    as2_state_estimator_node = Node(
+        package="as2_state_estimator",
+        executable="as2_state_estimator_node",
+        name="as2_state_estimator_node",
+        parameters=[as2_state_estimator_yaml],
+    )
+    as2_platform_pixhawk_node = Node(
+        package="as2_platform_pixhawk",
+        executable="as2_platform_pixhawk_node",
+        name="as2_platform_pixhawk_node",
+        output="screen",
+        emulate_tty=True,
+        parameters=[
+            as2_platform_pixhawk_yaml,
+            {"control_modes_file": as2_control_modes_yaml}
+        ],
+    )
+
+    return LaunchDescription(
+        [
+            nvidia_container,
+            as2_state_estimator_node,
+            as2_platform_pixhawk_node,
+        ]
     )
