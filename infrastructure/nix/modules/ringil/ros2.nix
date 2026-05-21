@@ -13,6 +13,14 @@
     launch-ros = rosDistro.launch-ros;
   };
 
+  zenohConfigFile = pkgs.writeText "zenoh_config.json" (builtins.toJSON {
+    transport = {
+      shared_memory = {
+        enabled = true;
+      };
+    };
+  });
+
   autonomyLaunchScript = pkgs.writeScriptBin "ringil-ros2-launch" ''
     #!${pkgs.stdenv.shell}
     source ${rosDistro.ros-workspace}/setup.bash
@@ -29,6 +37,8 @@ in {
   environment.variables = {
     ROS_DOMAIN_ID = "42";
     RMW_IMPLEMENTATION = "rmw_zenoh_cpp";
+    ZENOH_CONFIG_FILE = "${zenohConfigFile}";
+    ROS_DISABLE_LOANED_MESSAGES = "0";
   };
 
   environment.systemPackages = with rosDistro; [
@@ -58,6 +68,9 @@ in {
     environment = {
       ROS_DOMAIN_ID = "42";
       RMW_IMPLEMENTATION = "rmw_zenoh_cpp";
+      ZENOH_CONFIG_FILE = "${zenohConfigFile}";
+      ROS_DISABLE_LOANED_MESSAGES = "0";
+      MALLOC_TRIM_THRESHOLD_ = "131072";
     };
 
     serviceConfig = {
@@ -70,6 +83,7 @@ in {
       LimitRTPRIO = 99;
       CPUSchedulingPolicy = "fifo";
       CPUSchedulingPriority = 80;
+      OOMScoreAdjust = "-1000";
     };
   };
 }
