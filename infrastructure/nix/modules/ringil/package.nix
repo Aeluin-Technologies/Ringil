@@ -1,6 +1,6 @@
 {pkgs, ...}:
 pkgs.rustPlatform.buildRustPackage {
-  pname = "ringil-daemon";
+  pname = "ringil-workspace";
   version = "0.1.0";
 
   src = ../../../..;
