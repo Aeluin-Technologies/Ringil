@@ -42,7 +42,7 @@
   doraStartScript = pkgs.writeScriptBin "ringil-dora-start" ''
     #!${pkgs.stdenv.shell}
 
-    source ${pkgs.rosPackages.jazzy.ros-workspace}/setup.bash
+    source ${pkgs.rosPackages.lyrical.ros-workspace}/setup.bash
     export RMW_IMPLEMENTATION=rmw_zenoh_cpp
     export ROS_DOMAIN_ID=42
 

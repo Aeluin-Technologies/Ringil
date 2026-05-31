@@ -168,7 +168,7 @@
 
         packages = [
           rosPkgs.colcon
-          (with rosPkgs.rosPackages.jazzy; [
+          (with rosPkgs.rosPackages.lyrical; [
             ros-core
             rmw-zenoh-cpp
             behaviortree-cpp

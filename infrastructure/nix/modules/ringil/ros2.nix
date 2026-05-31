@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  rosDistro = pkgs.rosPackages.jazzy;
+  rosDistro = pkgs.rosPackages.lyrical;
 
   ringilBringup = pkgs.callPackage ./ringil-bringup.nix {
     buildRosPackage = rosDistro.buildRosPackage;
