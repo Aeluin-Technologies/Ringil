@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 
-use crate::protocol::pb::{PriorityLevel, RingilFrame, ringil_frame::Payload};
+use passerelle::ringil::swarm::v1::{
+    PriorityLevel, RingilFrame, ringil_frame::Payload,
+};
 
 /// Priority-aware buffer.
 pub struct PriorityFrameBuffer {

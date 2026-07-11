@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::protocol::pb::{
+use passerelle::ringil::swarm::v1::{
     ConsensusNode, GeoPoint, MappingUpdate, PerceptionEvent, RingilFrame,
     UnitStatus, ringil_frame::Payload,
 };

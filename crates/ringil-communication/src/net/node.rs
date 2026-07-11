@@ -5,7 +5,7 @@ use tokio::sync::mpsc;
 use zenoh::{Config, Result as ZResult, Session};
 
 use crate::net::crypto::PayloadEncryptor;
-use crate::protocol::pb::RingilFrame;
+use passerelle::ringil::swarm::v1::RingilFrame;
 
 /// Defines the routing topology for a message.
 #[derive(Debug, Clone, Copy)]

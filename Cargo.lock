@@ -4197,6 +4197,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "passerelle"
+version = "0.1.0"
+source = "git+https://github.com/Aeluin-Technologies/passerelle.git?branch=main#cfec46dac5a36b616da61cd45baeaf5e07b4051e"
+dependencies = [
+ "prost",
+]
+
+[[package]]
 name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5122,6 +5130,7 @@ dependencies = [
  "async-trait",
  "chacha20poly1305",
  "crc32fast",
+ "passerelle",
  "prost",
  "prost-build",
  "prost-types",

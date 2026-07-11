@@ -1,4 +1,4 @@
-use crate::protocol::pb::{CompressionType, FeatureEmbedding};
+use passerelle::ringil::swarm::v1::{CompressionType, FeatureEmbedding};
 
 /// Compress high-dimensional AI embeddings for narrow-band transmission.
 pub fn compress_embedding(

@@ -1,9 +1,9 @@
-use crate::protocol::pb::RingilFrame;
 use anyhow::{Context, Result};
 use chacha20poly1305::{
     ChaCha20Poly1305, Key, Nonce,
     aead::{Aead, KeyInit},
 };
+use passerelle::ringil::swarm::v1::RingilFrame;
 use prost::Message;
 use rand::Rng;
 
