@@ -7,6 +7,7 @@ pkgs.rustPlatform.buildRustPackage {
 
   cargoLock = {
     lockFile = ../../../../Cargo.lock;
+    allowBuiltinFetchGit = true;
     outputHashes = {};
   };
 
