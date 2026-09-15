@@ -20,7 +20,7 @@ pub enum SwarmTarget {
 
 impl SwarmTarget {
     /// Generates the Zenoh key expression for publishing.
-    fn to_key_expr(&self, sender_id: u32) -> String {
+    fn to_key_expr(self, sender_id: u32) -> String {
         match self {
             SwarmTarget::Global => format!("ringil/swarm/global/{sender_id}"),
             SwarmTarget::Cluster(cid) => {

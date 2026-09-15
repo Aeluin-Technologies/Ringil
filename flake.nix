@@ -23,7 +23,7 @@
     nixpkgs.follows = "nix-ros-overlay/nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
-    lanzaboote.url = "github:nix-community/lanzaboote/v0.4.2";
+    lanzaboote.url = "github:nix-community/lanzaboote/master";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -36,7 +36,7 @@
     nix-ros-overlay,
     ...
   } @ inputs: let
-    supportedSystems = ["aarch64-linux"];
+    supportedSystems = ["aarch64-linux" "aarch64-darwin"];
     forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
     galadrilConfig = {
@@ -84,7 +84,6 @@
           [
             nix-ros-overlay.nixosModules.default
             disko.nixosModules.disko
-            lanzaboote.nixosModules.lanzaboote
 
             {
               nixpkgs.config.allowUnfree = true;
@@ -98,7 +97,6 @@
             sharedNixConfig
 
             ./infrastructure/nix/modules/core/env.nix
-            ./infrastructure/nix/modules/core/bootloader.nix
             ./infrastructure/nix/modules/core/filesystems.nix
             ./infrastructure/nix/modules/ringil/ros2.nix
             ./infrastructure/nix/modules/network/galadril-link.nix
@@ -111,8 +109,16 @@
           ]
           ++ (
             if isSim
-            then [{networking.hostName = hostname;}]
+            then [
+              {
+                networking.hostName = hostname;
+                boot.loader.systemd-boot.enable = true;
+                boot.loader.efi.canTouchEfiVariables = true;
+              }
+            ]
             else [
+              lanzaboote.nixosModules.lanzaboote
+              ./infrastructure/nix/modules/core/bootloader.nix
               jetpack-nixos.nixosModules.default
               ./infrastructure/nix/hardware/jetson.nix
               ./infrastructure/nix/hardware/px4-interfaces.nix
@@ -145,50 +151,71 @@
       };
     };
 
-    formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.alejandra;
-    formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.alejandra;
+    formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
 
-    devShells = forAllSystems (system: let
-      jetpackPkgs = import jetpack-nixos.inputs.nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-        config.allowUnsupportedSystem = true;
-        overlays = [jetpack-nixos.overlays.default];
-      };
-
-      rosPkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-        config.allowUnsupportedSystem = true;
-        overlays = [nix-ros-overlay.overlays.default];
+    apps = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      cargoScope =
+        if system == "aarch64-linux"
+        then "--workspace"
+        else "-p ringil-communication";
+      nativeLibraries = with pkgs;
+        [openssl]
+        ++ lib.optionals stdenv.isLinux [glib gst_all_1.gstreamer gst_all_1.gst-plugins-base ffmpeg udev v4l-utils];
+      test = pkgs.writeShellApplication {
+        name = "ringil-test";
+        runtimeInputs = with pkgs; [cargo rustc rustfmt clippy pkg-config protobuf cmake alejandra] ++ nativeLibraries;
+        text = ''
+          export CARGO_TARGET_DIR="''${CARGO_TARGET_DIR:-$PWD/target}"
+          export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPathOutput "dev" "lib/pkgconfig" nativeLibraries}''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+          alejandra --check .
+          cargo fmt --all -- --check
+          cargo clippy ${cargoScope} --all-targets --locked -- -D warnings
+          cargo test ${cargoScope} --locked
+        '';
       };
     in {
-      default = rosPkgs.mkShell {
+      test = {
+        type = "app";
+        program = "${test}/bin/ringil-test";
+      };
+    });
+
+    devShells = forAllSystems (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        config.allowUnsupportedSystem = true;
+        overlays =
+          if system == "aarch64-linux"
+          then [nix-ros-overlay.overlays.default]
+          else [];
+      };
+    in {
+      default = pkgs.mkShell {
         name = "drone-dev";
 
-        packages = [
-          rosPkgs.colcon
-          (with rosPkgs.rosPackages.lyrical; [
-            ros-core
-            rmw-zenoh-cpp
-            behaviortree-cpp
-          ])
-        ];
+        packages = with pkgs;
+          [cargo rustc rustfmt clippy pkg-config protobuf cmake alejandra]
+          ++ lib.optionals stdenv.isLinux [
+            colcon
+            rosPackages.lyrical.ros-core
+            rosPackages.lyrical.rmw-zenoh-cpp
+            rosPackages.lyrical.behaviortree-cpp
+          ];
 
-        buildInputs = with rosPkgs; [
-          pkg-config
-          openssl
-          rustc
-          cargo
-          alejandra
-        ];
+        buildInputs = with pkgs;
+          [openssl]
+          ++ lib.optionals stdenv.isLinux [glib udev v4l-utils gst_all_1.gstreamer gst_all_1.gst-plugins-base ffmpeg libclang];
 
         shellHook = ''
           echo "🚀 Drone Dev Environment (${system})"
 
-          export RMW_IMPLEMENTATION=rmw_zenoh_cpp
-          export ROS_DOMAIN_ID=42
-          echo "ROS 2 is active with RMW: $RMW_IMPLEMENTATION"
+          ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''
+            export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+            export ROS_DOMAIN_ID=42
+            echo "ROS 2 is active with RMW: $RMW_IMPLEMENTATION"
+          ''}
         '';
       };
     });

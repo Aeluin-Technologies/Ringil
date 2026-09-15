@@ -4,6 +4,7 @@
   ...
 }: {
   system.stateVersion = "26.05";
+  ringil.env.mode = "dev";
 
   users.mutableUsers = lib.mkForce true;
   users.allowNoPasswordLogin = lib.mkForce true;
