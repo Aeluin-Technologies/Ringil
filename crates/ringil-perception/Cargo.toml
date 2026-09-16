@@ -18,7 +18,7 @@ dora-node-api = "0.5"
 gstreamer = "0.25"
 gstreamer-app = "0.25"
 
-ort = { version = "2.0.0-rc.12", features = ["tensorrt", "cuda"] }
+ort = { version = "=2.0.0-rc.12", features = ["tensorrt", "cuda"] }
 ultralytics-inference = { version = "0.0.15", features = ["tensorrt", "cuda"] }
 image = "0.25"
 fast_image_resize = "6.0"
