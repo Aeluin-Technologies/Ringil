@@ -2,7 +2,7 @@ name: nix
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
   workflow_dispatch:
 
@@ -20,13 +20,12 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
-            github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check flakes
-        run: |
-          nix flake check --impure --accept-flake-config
+        run: nix flake check --accept-flake-config
 
-      - name: Format, lint, and test Rust workspace
+      - name: Check format
         run: nix run .#test --accept-flake-config
 
       - name: Evaluate dev configuration

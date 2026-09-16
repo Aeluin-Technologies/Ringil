@@ -484,7 +484,7 @@ impl ByteTrack {
             }
         }
 
-        costs.sort_unstable_by(|a, b| a.0.to_bits().cmp(&b.0.to_bits()));
+        costs.sort_unstable_by_key(|entry| entry.0.to_bits());
 
         let mut matches =
             Vec::with_capacity(tracks.len().min(detections.len()));

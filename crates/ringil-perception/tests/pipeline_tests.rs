@@ -162,7 +162,7 @@ fn test_render_annotated_video() -> Result<()> {
                     _ => {},
                 }
             }
-            while let Ok(_) = pipeline.buffalo_rx.try_recv() {}
+            while pipeline.buffalo_rx.try_recv().is_ok() {}
 
             let frame_buffer = dynamic_frame.as_mut_rgb8().unwrap();
             for (id, (class, obb, confidence)) in &active_tracks {

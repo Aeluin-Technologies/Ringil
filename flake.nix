@@ -164,10 +164,17 @@
         ++ lib.optionals stdenv.isLinux [glib gst_all_1.gstreamer gst_all_1.gst-plugins-base ffmpeg udev v4l-utils];
       test = pkgs.writeShellApplication {
         name = "ringil-test";
-        runtimeInputs = with pkgs; [cargo rustc rustfmt clippy pkg-config protobuf cmake alejandra] ++ nativeLibraries;
+        runtimeInputs = with pkgs;
+          [cargo rustc rustfmt clippy pkg-config protobuf cmake alejandra stdenv.cc]
+          ++ lib.optionals stdenv.isLinux [libclang]
+          ++ nativeLibraries;
         text = ''
           export CARGO_TARGET_DIR="''${CARGO_TARGET_DIR:-$PWD/target}"
           export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPathOutput "dev" "lib/pkgconfig" nativeLibraries}''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+          ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''
+            export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+            export BINDGEN_EXTRA_CLANG_ARGS="-isystem ${pkgs.glibc.dev}/include''${BINDGEN_EXTRA_CLANG_ARGS:+ $BINDGEN_EXTRA_CLANG_ARGS}"
+          ''}
           alejandra --check .
           cargo fmt --all -- --check
           cargo clippy ${cargoScope} --all-targets --locked -- -D warnings
