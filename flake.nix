@@ -23,8 +23,6 @@
     nixpkgs.follows = "nix-ros-overlay/nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
-    lanzaboote.url = "github:nix-community/lanzaboote/master";
-    lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = {
@@ -32,7 +30,6 @@
     nixpkgs,
     jetpack-nixos,
     disko,
-    lanzaboote,
     nix-ros-overlay,
     ...
   } @ inputs: let
@@ -76,6 +73,7 @@
       profile,
       system,
       isSim ? false,
+      signing ? false,
     }:
       nixpkgs.lib.nixosSystem {
         inherit system;
@@ -95,6 +93,7 @@
             }
 
             sharedNixConfig
+            {ringil.tegra.signing.enable = signing;}
 
             ./infrastructure/nix/modules/core/env.nix
             ./infrastructure/nix/modules/core/filesystems.nix
@@ -117,7 +116,6 @@
               }
             ]
             else [
-              lanzaboote.nixosModules.lanzaboote
               ./infrastructure/nix/modules/core/bootloader.nix
               jetpack-nixos.nixosModules.default
               ./infrastructure/nix/hardware/jetson.nix
@@ -149,44 +147,79 @@
         profile = "prod";
         system = "aarch64-linux";
       };
+      "prod-swarm-firmware-signed" = mkDrone {
+        hostname = "prod-swarm";
+        profile = "prod";
+        system = "aarch64-linux";
+        signing = true;
+      };
     };
 
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
 
-    apps = forAllSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      cargoScope =
-        if system == "aarch64-linux"
-        then "--workspace"
-        else "-p ringil-communication";
-      nativeLibraries = with pkgs;
-        [openssl]
-        ++ lib.optionals stdenv.isLinux [glib gst_all_1.gstreamer gst_all_1.gst-plugins-base ffmpeg udev v4l-utils];
-      test = pkgs.writeShellApplication {
-        name = "ringil-test";
-        runtimeInputs = with pkgs;
-          [cargo rustc rustfmt clippy pkg-config protobuf cmake alejandra stdenv.cc]
-          ++ lib.optionals stdenv.isLinux [libclang]
-          ++ nativeLibraries;
-        text = ''
-          export CARGO_TARGET_DIR="''${CARGO_TARGET_DIR:-$PWD/target}"
-          export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPathOutput "dev" "lib/pkgconfig" nativeLibraries}''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-          ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''
-            export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
-            export BINDGEN_EXTRA_CLANG_ARGS="-isystem ${pkgs.glibc.dev}/include''${BINDGEN_EXTRA_CLANG_ARGS:+ $BINDGEN_EXTRA_CLANG_ARGS}"
-          ''}
-          alejandra --check .
-          cargo fmt --all -- --check
-          cargo clippy ${cargoScope} --all-targets --locked -- -D warnings
-          cargo test ${cargoScope} --locked
-        '';
+    apps =
+      (forAllSystems (system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+        cargoScope =
+          if system == "aarch64-linux"
+          then "--workspace"
+          else "-p ringil-communication";
+        nativeLibraries = with pkgs;
+          [openssl]
+          ++ lib.optionals stdenv.isLinux [glib gst_all_1.gstreamer gst_all_1.gst-plugins-base ffmpeg udev v4l-utils];
+        test = pkgs.writeShellApplication {
+          name = "ringil-test";
+          runtimeInputs = with pkgs;
+            [cargo rustc rustfmt clippy pkg-config protobuf cmake alejandra nix bash ripgrep stdenv.cc]
+            ++ lib.optionals stdenv.isLinux [libclang util-linux]
+            ++ nativeLibraries;
+          text = ''
+            export CARGO_TARGET_DIR="''${CARGO_TARGET_DIR:-$PWD/target}"
+            export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPathOutput "dev" "lib/pkgconfig" nativeLibraries}''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+            ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''
+              export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+              export BINDGEN_EXTRA_CLANG_ARGS="-isystem ${pkgs.glibc.dev}/include''${BINDGEN_EXTRA_CLANG_ARGS:+ $BINDGEN_EXTRA_CLANG_ARGS}"
+            ''}
+            alejandra --check .
+            nix-instantiate --eval --strict --expr 'import ./tests/tegra-boot.nix'
+            bash ./tests/tegra-provisioning.sh
+            cargo fmt --all -- --check
+            cargo clippy ${cargoScope} --all-targets --locked -- -D warnings
+            cargo test ${cargoScope} --locked
+          '';
+        };
+      in {
+        test = {
+          type = "app";
+          program = "${test}/bin/ringil-test";
+        };
+      }))
+      // {
+        x86_64-linux = let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          provision = action:
+            pkgs.writeShellApplication {
+              name = "ringil-jetson-${action}";
+              runtimeInputs = with pkgs; [bash coreutils openssl efitools util-linux nix];
+              text = ''
+                exec ${pkgs.bash}/bin/bash ${./infrastructure/nix/scripts/jetson-provisioning.sh} ${action} "$@"
+              '';
+            };
+        in {
+          generate-jetson-keys = {
+            type = "app";
+            program = "${provision "generate"}/bin/ringil-jetson-generate";
+          };
+          check-jetson-keys = {
+            type = "app";
+            program = "${provision "check"}/bin/ringil-jetson-check";
+          };
+          build-jetson-flash = {
+            type = "app";
+            program = "${provision "build"}/bin/ringil-jetson-build";
+          };
+        };
       };
-    in {
-      test = {
-        type = "app";
-        program = "${test}/bin/ringil-test";
-      };
-    });
 
     devShells = forAllSystems (system: let
       pkgs = import nixpkgs {

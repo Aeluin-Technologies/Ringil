@@ -8,4 +8,6 @@
       * 'dev', enables debugging access (SSH, persistent journald).
     '';
   };
+
+  options.ringil.tegra.signing.enable = lib.mkEnableOption "host-side Tegra firmware signing";
 }
